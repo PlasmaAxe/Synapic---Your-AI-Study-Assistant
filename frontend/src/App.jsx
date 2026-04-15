@@ -46,8 +46,10 @@ function App() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-indigo-400">StudyForge</h1>
-        <p className="text-gray-400 mt-1">Paste your notes, get flashcards instantly.</p>
+        <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:gap-3">
+          <h1 className="text-4xl font-bold text-indigo-400">Synapic</h1>
+          <p className="text-gray-400">Study at the speed of thought.</p>
+        </div>
       </div>
 
       {/* Input Area */}
