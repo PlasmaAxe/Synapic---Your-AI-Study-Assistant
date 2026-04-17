@@ -63,7 +63,7 @@ function Landing({ onEnter }) {
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-function Toast({ message, onClose }) {
+function Toast({ message, onClose }) { //sends a popup message at the bottom right of the screen for 3 seconds
   useEffect(() => {
     const t = setTimeout(onClose, 3000)
     return () => clearTimeout(t)
@@ -88,9 +88,9 @@ function SkeletonCard() {
 }
 
 // ── Main App ──────────────────────────────────────────────────
-export default function App() {
+export default function App() { //this is the main app component that handles the flashcard generation and display logic
   const [page, setPage] = useState('landing')
-  const [tab, setTab] = useState('flashcards')
+  const [tab, setTab] = useState('flashcards') //this basicallay keep notes of things
   const [notes, setNotes] = useState('')
   const [flashcards, setFlashcards] = useState([])
   const [loading, setLoading] = useState(false)
@@ -140,7 +140,7 @@ export default function App() {
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
-        <button onClick={() => setPage('landing')} className="font-bold text-lg tracking-wide text-white">
+        <button onClick={() => setPage('landing')} className="text-white font-bold text-xl tracking-[0.28em] uppercase">
           Synapic
         </button>
         <div className="flex gap-2">
