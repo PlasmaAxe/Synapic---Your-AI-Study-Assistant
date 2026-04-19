@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-// ── Landing Page ──────────────────────────────────────────────
 function Landing({ onEnter }) {
   return (
-    <div className="min-h-screen flex flex-col" style={{
-      background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)'
-    }}>
-      {/* Nav */}
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}
+    >
       <nav className="flex items-center justify-between px-10 py-6">
         <span className="text-white font-bold text-xl tracking-[0.28em] uppercase">Synapic</span>
         <button
@@ -18,14 +17,20 @@ function Landing({ onEnter }) {
         </button>
       </nav>
 
-      {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
         <div className="mb-6 inline-block px-4 py-1 rounded-full border border-purple-400/40 text-purple-300 text-xs tracking-widest uppercase">
           AI-Powered Study Tools
         </div>
         <h1 className="text-6xl font-black text-white mb-4 leading-tight">
-          Study Smarter.<br />
-          <span style={{ background: 'linear-gradient(90deg, #a78bfa, #f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          Study Smarter.
+          <br />
+          <span
+            style={{
+              background: 'linear-gradient(90deg, #a78bfa, #f472b6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Not Harder.
           </span>
         </h1>
@@ -36,11 +41,10 @@ function Landing({ onEnter }) {
           Paste your lecture notes and instantly get flashcards, quizzes, and summaries powered by AI.
         </p>
 
-        {/* Feature Pills */}
         <div className="flex gap-3 mb-10 flex-wrap justify-center">
-          {['✦ Flashcards', '✦ Quizzes', '✦ Summaries'].map(f => (
-            <span key={f} className="px-4 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20">
-              {f}
+          {['Flashcards', 'Quizzes', 'Summaries'].map(feature => (
+            <span key={feature} className="px-4 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20">
+              {feature}
             </span>
           ))}
         </div>
@@ -50,20 +54,19 @@ function Landing({ onEnter }) {
           className="px-8 py-4 rounded-full text-white font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg"
           style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
         >
-          Start Studying Free →
+          Start Studying Free
         </button>
       </div>
 
-      {/* Bottom wave decoration */}
-      <div className="h-32 w-full" style={{
-        background: 'linear-gradient(to top, rgba(124,58,237,0.15), transparent)'
-      }}/>
+      <div
+        className="h-32 w-full"
+        style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.15), transparent)' }}
+      />
     </div>
   )
 }
 
-// ── Toast ─────────────────────────────────────────────────────
-function Toast({ message, onClose }) { //sends a popup message at the bottom right of the screen for 3 seconds
+function Toast({ message, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000)
     return () => clearTimeout(t)
@@ -76,32 +79,33 @@ function Toast({ message, onClose }) { //sends a popup message at the bottom rig
   )
 }
 
-// ── Skeleton Card ─────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className="rounded-2xl p-6 min-h-32 animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }}>
-      <div className="h-3 w-16 rounded mb-4" style={{ background: 'rgba(255,255,255,0.1)' }}/>
-      <div className="h-4 w-full rounded mb-2" style={{ background: 'rgba(255,255,255,0.1)' }}/>
-      <div className="h-4 w-3/4 rounded" style={{ background: 'rgba(255,255,255,0.1)' }}/>
+      <div className="h-3 w-16 rounded mb-4" style={{ background: 'rgba(255,255,255,0.1)' }} />
+      <div className="h-4 w-full rounded mb-2" style={{ background: 'rgba(255,255,255,0.1)' }} />
+      <div className="h-4 w-3/4 rounded" style={{ background: 'rgba(255,255,255,0.1)' }} />
     </div>
   )
 }
 
-// ── Main App ──────────────────────────────────────────────────
-export default function App() { //this is the main app component that handles the flashcard generation and display logic
+export default function App() {
   const [page, setPage] = useState('landing')
-  const [tab, setTab] = useState('flashcards') //this basicallay keep notes of things
+  const [tab, setTab] = useState('flashcards')
   const [notes, setNotes] = useState('')
   const [flashcards, setFlashcards] = useState([])
+  const [quiz, setQuiz] = useState(null)
+  const [quizAnswers, setQuizAnswers] = useState({})
+  const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [flipped, setFlipped] = useState({})
   const [currentCard, setCurrentCard] = useState(0)
   const [studyMode, setStudyMode] = useState('grid')
   const [toast, setToast] = useState(null)
 
-  // Keyboard shortcuts
   useEffect(() => {
-    const handler = (e) => {
+    const handler = e => {
       if (flashcards.length === 0 || studyMode !== 'study') return
       if (e.key === 'ArrowRight') setCurrentCard(i => Math.min(i + 1, flashcards.length - 1))
       if (e.key === 'ArrowLeft') setCurrentCard(i => Math.max(i - 1, 0))
@@ -110,35 +114,50 @@ export default function App() { //this is the main app component that handles th
         setFlipped(prev => ({ ...prev, [currentCard]: !prev[currentCard] }))
       }
     }
+
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [flashcards, studyMode, currentCard])
 
   const generate = async () => {
     if (!notes.trim()) return
+
     setLoading(true)
     setFlashcards([])
+    setQuiz(null)
+    setSummary(null)
     setFlipped({})
     setCurrentCard(0)
+    setQuizAnswers({})
+    setQuizSubmitted(false)
+
     try {
-      const res = await axios.post('http://localhost:8000/generate-flashcards', { text: notes })
-      setFlashcards(res.data.flashcards)
-      setToast(`✨ ${res.data.flashcards.length} flashcards generated!`)
+      if (tab === 'flashcards') {
+        const res = await axios.post('http://localhost:8000/generate-flashcards', { text: notes })
+        setFlashcards(res.data.flashcards)
+        setToast(`Generated ${res.data.flashcards.length} flashcards`)
+      } else if (tab === 'quizzes') {
+        const res = await axios.post('http://localhost:8000/generate-quiz', { text: notes })
+        setQuiz(res.data.quiz)
+        setToast(`Generated ${res.data.quiz.length} questions`)
+      } else if (tab === 'summary') {
+        const res = await axios.post('http://localhost:8000/generate-summary', { text: notes })
+        setSummary(res.data)
+        setToast('Summary generated')
+      }
     } catch {
-      setToast('❌ Something went wrong. Is the backend running?')
+      setToast('Something went wrong. Is the backend running?')
     }
+
     setLoading(false)
   }
 
   if (page === 'landing') return <Landing onEnter={() => setPage('app')} />
 
   return (
-    <div className="min-h-screen text-white" style={{
-      background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)'
-    }}>
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
         <button onClick={() => setPage('landing')} className="text-white font-bold text-xl tracking-[0.28em] uppercase">
           Synapic
@@ -149,23 +168,22 @@ export default function App() { //this is the main app component that handles th
               key={t}
               onClick={() => setTab(t)}
               className="px-4 py-2 rounded-full text-sm font-medium capitalize transition-all"
-              style={tab === t
-                ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
-                : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
+              style={
+                tab === t
+                  ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
+                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
               }
             >
-              {t === 'flashcards' ? '🃏 Flashcards' : t === 'quizzes' ? '📝 Quizzes' : '📄 Summary'}
+              {t === 'flashcards' ? 'Flashcards' : t === 'quizzes' ? 'Quizzes' : 'Summary'}
             </button>
           ))}
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-
-        {/* Notes Input */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">
-            {tab === 'flashcards' ? '🃏 Generate Flashcards' : tab === 'quizzes' ? '📝 Generate Quiz' : '📄 Summarise Notes'}
+            {tab === 'flashcards' ? 'Generate Flashcards' : tab === 'quizzes' ? 'Generate Quiz' : 'Summarise Notes'}
           </h2>
           <p className="text-gray-400 text-sm mb-4">Paste your lecture notes below</p>
           <textarea
@@ -181,69 +199,189 @@ export default function App() { //this is the main app component that handles th
             className="mt-3 px-6 py-3 rounded-full font-semibold text-white transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
             style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
           >
-            {loading ? 'Generating...' : tab === 'flashcards' ? '✨ Generate Flashcards' : tab === 'quizzes' ? '✨ Generate Quiz' : '✨ Summarise'}
+            {loading ? 'Generating...' : tab === 'flashcards' ? 'Generate Flashcards' : tab === 'quizzes' ? 'Generate Quiz' : 'Summarise'}
           </button>
         </div>
 
-        {/* Coming Soon for Quizzes and Summary */}
-        {tab !== 'flashcards' && (
-          <div className="rounded-2xl p-12 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <p className="text-4xl mb-4">{tab === 'quizzes' ? '📝' : '📄'}</p>
-            <p className="text-white font-semibold text-lg mb-2">{tab === 'quizzes' ? 'Quizzes' : 'Summaries'} Coming Soon</p>
-            <p className="text-gray-400 text-sm">This feature is currently being built. Check back soon!</p>
+        {tab === 'quizzes' && !loading && quiz && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <p className="text-gray-400 text-sm">{quiz.length} questions</p>
+              {quizSubmitted && (
+                <p className="text-sm font-semibold" style={{ color: '#a78bfa' }}>
+                  Score: {Object.entries(quizAnswers).filter(([i, ans]) => ans === quiz[i].correct).length} / {quiz.length}
+                </p>
+              )}
+            </div>
+
+            {quiz.map((q, i) => (
+              <div
+                key={i}
+                className="rounded-2xl p-6"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <p className="text-white font-medium mb-4">{i + 1}. {q.question}</p>
+                <div className="space-y-2">
+                  {q.options.map(opt => {
+                    const selected = quizAnswers[i] === opt.label
+                    const isCorrect = opt.label === q.correct
+                    let bg = 'rgba(255,255,255,0.05)'
+                    let border = 'rgba(255,255,255,0.1)'
+
+                    if (quizSubmitted && isCorrect) {
+                      bg = 'rgba(34,197,94,0.2)'
+                      border = '#22c55e'
+                    }
+
+                    if (quizSubmitted && selected && !isCorrect) {
+                      bg = 'rgba(239,68,68,0.2)'
+                      border = '#ef4444'
+                    }
+
+                    if (!quizSubmitted && selected) {
+                      bg = 'rgba(124,58,237,0.3)'
+                      border = '#7c3aed'
+                    }
+
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => !quizSubmitted && setQuizAnswers(prev => ({ ...prev, [i]: opt.label }))}
+                        className="w-full text-left px-4 py-3 rounded-xl text-sm text-white transition-all"
+                        style={{ background: bg, border: `1px solid ${border}` }}
+                      >
+                        <span className="font-bold mr-2">{opt.label}.</span>
+                        {opt.text}
+                      </button>
+                    )
+                  })}
+                </div>
+                {quizSubmitted && (
+                  <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {q.explanation}
+                  </p>
+                )}
+              </div>
+            ))}
+
+            {!quizSubmitted && (
+              <button
+                onClick={() => setQuizSubmitted(true)}
+                disabled={Object.keys(quizAnswers).length < quiz.length}
+                className="px-6 py-3 rounded-full font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
+                style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
+              >
+                Submit Quiz
+              </button>
+            )}
           </div>
         )}
 
-        {/* Flashcard Results */}
+        {tab === 'summary' && !loading && summary && (
+          <div
+            className="rounded-2xl p-8 space-y-6"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            <div>
+              <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Summary
+              </p>
+              <h3 className="text-2xl font-bold text-white">{summary.title}</h3>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ color: '#a78bfa' }}>Overview</p>
+              <p className="text-sm text-gray-200 leading-relaxed">{summary.overview}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold mb-3" style={{ color: '#a78bfa' }}>Key Points</p>
+              <div className="space-y-3">
+                {summary.key_points.map((point, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl px-4 py-3 text-sm text-gray-100"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    {point}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold mb-2" style={{ color: '#a78bfa' }}>Conclusion</p>
+              <p className="text-sm text-gray-200 leading-relaxed">{summary.conclusion}</p>
+            </div>
+          </div>
+        )}
+        {/* Coming Soon placeholder when no results yet */}
+        {tab !== 'flashcards' && !loading && !quiz && !summary && (
+          <div className="rounded-2xl p-12 text-center"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <p className="text-4xl mb-4">{tab === 'quizzes' ? '📝' : '📄'}</p>
+            <p className="text-white font-semibold text-lg mb-2">
+              {tab === 'quizzes' ? 'Ready to Quiz Yourself?' : 'Ready to Summarise?'}
+            </p>
+            <p className="text-gray-400 text-sm">Paste your notes above and hit generate.</p>
+        </div>
+         )}
+
+         {/* Flashcards placeholder when no results yet */}
+        {tab === 'flashcards' && !loading && flashcards.length === 0 && (
+          <div className="rounded-2xl p-12 text-center"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            
+            <p className="text-4xl mb-4">🃏</p>
+            <p className="text-white font-semibold text-lg mb-2">Ready to Make Flashcards?</p>
+            <p className="text-gray-400 text-sm">Paste your notes above and hit generate.</p>
+         </div>
+        )}
+
+
         {tab === 'flashcards' && (
           <div>
-            {/* Loading Skeletons */}
             {loading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
               </div>
             )}
 
-            {/* Cards */}
             {!loading && flashcards.length > 0 && (
               <div>
-                {/* Mode Toggle + Progress */}
                 <div className="flex items-center justify-between mb-5">
                   <p className="text-gray-400 text-sm">{flashcards.length} cards generated</p>
                   <div className="flex gap-2">
-                    {['grid', 'study'].map(m => (
+                    {['grid', 'study'].map(mode => (
                       <button
-                        key={m}
-                        onClick={() => setStudyMode(m)}
+                        key={mode}
+                        onClick={() => setStudyMode(mode)}
                         className="px-4 py-2 rounded-full text-sm font-medium capitalize transition-all"
-                        style={studyMode === m
-                          ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
-                          : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
+                        style={
+                          studyMode === mode
+                            ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
+                            : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
                         }
                       >
-                        {m === 'grid' ? '⊞ Grid' : '▶ Study'}
+                        {mode === 'grid' ? 'Grid' : 'Study'}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Grid Mode */}
                 {studyMode === 'grid' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {flashcards.map((card, i) => (
                       <div
                         key={i}
-                        onClick={() => setFlipped(p => ({ ...p, [i]: !p[i] }))}
+                        onClick={() => setFlipped(prev => ({ ...prev, [i]: !prev[i] }))}
                         className="rounded-2xl p-6 cursor-pointer min-h-36 flex flex-col justify-between transition-all hover:scale-105"
                         style={{
-                          background: flipped[i]
-                            ? 'linear-gradient(135deg, #7c3aed33, #db277733)'
-                            : 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.1)'
+                          background: flipped[i] ? 'linear-gradient(135deg, #7c3aed33, #db277733)' : 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.1)',
                         }}
                       >
-                        <p className="text-xs uppercase tracking-widest mb-3"
-                          style={{ color: flipped[i] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
+                        <p className="text-xs uppercase tracking-widest mb-3" style={{ color: flipped[i] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
                           {flipped[i] ? 'Answer' : 'Question'}
                         </p>
                         <p className="text-sm text-white leading-relaxed">
@@ -257,10 +395,8 @@ export default function App() { //this is the main app component that handles th
                   </div>
                 )}
 
-                {/* Study Mode */}
                 {studyMode === 'study' && (
                   <div className="flex flex-col items-center">
-                    {/* Progress Bar */}
                     <div className="w-full max-w-2xl mb-4">
                       <div className="flex justify-between text-xs text-gray-400 mb-1">
                         <span>Card {currentCard + 1} of {flashcards.length}</span>
@@ -271,54 +407,55 @@ export default function App() { //this is the main app component that handles th
                           className="h-1 rounded-full transition-all"
                           style={{
                             width: `${((currentCard + 1) / flashcards.length) * 100}%`,
-                            background: 'linear-gradient(90deg, #7c3aed, #db2777)'
+                            background: 'linear-gradient(90deg, #7c3aed, #db2777)',
                           }}
                         />
                       </div>
                     </div>
 
-                    {/* Card */}
                     <div
-                      onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
+                      onClick={() => setFlipped(prev => ({ ...prev, [currentCard]: !prev[currentCard] }))}
                       className="w-full max-w-2xl rounded-3xl p-12 cursor-pointer min-h-64 flex flex-col items-center justify-center text-center transition-all hover:scale-102"
                       style={{
                         background: flipped[currentCard]
                           ? 'linear-gradient(135deg, #7c3aed33, #db277733)'
                           : 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.12)'
+                        border: '1px solid rgba(255,255,255,0.12)',
                       }}
                     >
-                      <p className="text-xs uppercase tracking-widest mb-6"
-                        style={{ color: flipped[currentCard] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
+                      <p className="text-xs uppercase tracking-widest mb-6" style={{ color: flipped[currentCard] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
                         {flipped[currentCard] ? 'Answer' : 'Question'}
                       </p>
                       <p className="text-xl text-white leading-relaxed">
-                        {flipped[currentCard]
-                          ? flashcards[currentCard].answer
-                          : flashcards[currentCard].question}
+                        {flipped[currentCard] ? flashcards[currentCard].answer : flashcards[currentCard].question}
                       </p>
                       <p className="text-xs mt-8" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                        Click to flip · Space to flip · ← → to navigate
+                        Click to flip. Space to flip. Use arrow keys to navigate.
                       </p>
                     </div>
 
-                    {/* Navigation */}
                     <div className="flex gap-4 mt-6">
                       <button
-                        onClick={() => { setFlipped({}); setCurrentCard(i => Math.max(i - 1, 0)) }}
+                        onClick={() => {
+                          setFlipped({})
+                          setCurrentCard(i => Math.max(i - 1, 0))
+                        }}
                         disabled={currentCard === 0}
                         className="px-6 py-3 rounded-full font-medium text-sm transition-all disabled:opacity-30"
                         style={{ background: 'rgba(255,255,255,0.08)', color: 'white' }}
                       >
-                        ← Previous
+                        Previous
                       </button>
                       <button
-                        onClick={() => { setFlipped({}); setCurrentCard(i => Math.min(i + 1, flashcards.length - 1)) }}
+                        onClick={() => {
+                          setFlipped({})
+                          setCurrentCard(i => Math.min(i + 1, flashcards.length - 1))
+                        }}
                         disabled={currentCard === flashcards.length - 1}
                         className="px-6 py-3 rounded-full font-medium text-sm transition-all disabled:opacity-30"
                         style={{ background: 'rgba(255,255,255,0.08)', color: 'white' }}
                       >
-                        Next →
+                        Next
                       </button>
                     </div>
                   </div>
