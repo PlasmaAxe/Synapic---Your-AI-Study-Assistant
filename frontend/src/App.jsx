@@ -1,71 +1,160 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-function Landing({ onEnter }) {
+// ── Design tokens ─────────────────────────────────────────────
+const C = {
+  bg: '#F7F5F0',
+  bgCard: '#FFFFFF',
+  bgCardHover: '#F0EDE8',
+  border: '#E8E4DC',
+  borderStrong: '#D4CFC5',
+  text: '#1A1A18',
+  textMuted: '#6B6860',
+  textLight: '#9B9890',
+  accent: '#0D9373',
+  accentLight: '#E6F5F0',
+  accentDark: '#0A7A5F',
+  accentGrad: 'linear-gradient(135deg, #0D9373, #0A7A5F)',
+  danger: '#E53E3E',
+  dangerLight: '#FFF5F5',
+  success: '#38A169',
+  successLight: '#F0FFF4',
+  warning: '#D69E2E',
+}
+
+// ── Mock flashcard for landing preview ────────────────────────
+function MockCard() {
+  const [flipped, setFlipped] = useState(false)
+  useEffect(() => {
+    const t = setInterval(() => setFlipped(f => !f), 2500)
+    return () => clearInterval(t)
+  }, [])
+
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}
+      onClick={() => setFlipped(f => !f)}
+      className="cursor-pointer rounded-2xl p-6 w-64 shadow-lg transition-all duration-500"
+      style={{
+        background: flipped ? C.accentGrad : C.bgCard,
+        border: `1px solid ${C.border}`,
+        transform: flipped ? 'rotateY(4deg) scale(1.02)' : 'rotateY(0deg)',
+      }}
     >
-      <nav className="flex items-center justify-between px-10 py-6">
-        <span className="text-white font-bold text-xl tracking-[0.28em] uppercase">Synapic</span>
-        <button
-          onClick={onEnter}
-          className="text-white border border-white/30 px-5 py-2 rounded-full text-sm hover:bg-white/10 transition"
-        >
-          Get Started
-        </button>
-      </nav>
-
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-        <div className="mb-6 inline-block px-4 py-1 rounded-full border border-purple-400/40 text-purple-300 text-xs tracking-widest uppercase">
-          AI-Powered Study Tools
-        </div>
-        <h1 className="text-6xl font-black text-white mb-4 leading-tight">
-          Study Smarter.
-          <br />
-          <span
-            style={{
-              background: 'linear-gradient(90deg, #a78bfa, #f472b6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Not Harder.
-          </span>
-        </h1>
-        <p className="synapic-slogan text-base sm:text-lg mb-6">
-          <span>Study at the speed of thought.</span>
-        </p>
-        <p className="text-gray-400 text-lg max-w-xl mb-10">
-          Paste your lecture notes and instantly get flashcards, quizzes, and summaries powered by AI.
-        </p>
-
-        <div className="flex gap-3 mb-10 flex-wrap justify-center">
-          {['Flashcards', 'Quizzes', 'Summaries'].map(feature => (
-            <span key={feature} className="px-4 py-2 rounded-full bg-white/10 text-white text-sm border border-white/20">
-              {feature}
-            </span>
-          ))}
-        </div>
-
-        <button
-          onClick={onEnter}
-          className="px-8 py-4 rounded-full text-white font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg"
-          style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
-        >
-          Start Studying Free
-        </button>
-      </div>
-
-      <div
-        className="h-32 w-full"
-        style={{ background: 'linear-gradient(to top, rgba(124,58,237,0.15), transparent)' }}
-      />
+      <p className="text-xs uppercase tracking-widest mb-3 font-medium"
+        style={{ color: flipped ? 'rgba(255,255,255,0.6)' : C.textLight }}>
+        {flipped ? 'Answer' : 'Question'}
+      </p>
+      <p className="text-sm font-medium leading-relaxed"
+        style={{ color: flipped ? 'white' : C.text }}>
+        {flipped
+          ? 'The process by which plants convert sunlight into glucose using CO₂ and water.'
+          : 'What is photosynthesis?'}
+      </p>
+      <p className="text-xs mt-4" style={{ color: flipped ? 'rgba(255,255,255,0.4)' : C.textLight }}>
+        {flipped ? 'Click to flip back' : 'Click to reveal answer'}
+      </p>
     </div>
   )
 }
 
+// ── Landing ───────────────────────────────────────────────────
+function Landing({ onEnter }) {
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: C.bg }}>
+
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-10 py-6"
+        style={{ borderBottom: `1px solid ${C.border}` }}>
+        <span className="font-black text-xl tracking-[0.2em] uppercase"
+          style={{ color: C.text }}>
+          Synapic
+        </span>
+        <div className="flex items-center gap-4">
+          <button onClick={onEnter}
+            className="text-sm font-medium transition-colors"
+            style={{ color: C.textMuted }}>
+            Sign In
+          </button>
+          <button onClick={onEnter}
+            className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-105"
+            style={{ background: C.accentGrad }}>
+            Get Started Free
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
+
+        {/* Badge */}
+        <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest"
+          style={{ background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30` }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.accent }}/>
+          AI-Powered Study Tools
+        </div>
+
+        {/* Headline */}
+        <h1 className="text-6xl font-black mb-6 leading-[1.1] max-w-3xl"
+          style={{ color: C.text, letterSpacing: '-0.02em' }}>
+          Study Smarter.{' '}
+          <span style={{
+            background: C.accentGrad,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Not Harder.
+          </span>
+        </h1>
+
+        <p className="text-lg max-w-lg mb-12 leading-relaxed"
+          style={{ color: C.textMuted, letterSpacing: '0.01em' }}>
+          Paste your lecture notes and instantly get flashcards, quizzes,
+          and summaries — all powered by AI.
+        </p>
+
+        {/* Live preview card */}
+        <div className="mb-12 flex flex-col items-center gap-3">
+          <p className="text-xs uppercase tracking-widest font-medium"
+            style={{ color: C.textLight }}>
+            Live preview
+          </p>
+          <MockCard />
+        </div>
+
+        {/* Feature pills */}
+        <div className="flex gap-3 mb-10 flex-wrap justify-center">
+          {[
+            { icon: '🃏', label: 'Flashcards' },
+            { icon: '📝', label: 'Quizzes' },
+            { icon: '📄', label: 'Summaries' },
+          ].map(f => (
+            <span key={f.label}
+              className="px-4 py-2 rounded-full text-sm font-medium"
+              style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
+              {f.icon} {f.label}
+            </span>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <button onClick={onEnter}
+          className="px-10 py-4 rounded-full text-white font-bold text-lg transition-all hover:scale-105 shadow-lg"
+          style={{
+            background: C.accentGrad,
+            boxShadow: `0 8px 32px ${C.accent}40`
+          }}>
+          Start Studying Free →
+        </button>
+
+        <p className="mt-4 text-sm" style={{ color: C.textLight }}>
+          No account required to get started
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Toast ─────────────────────────────────────────────────────
 function Toast({ message, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000)
@@ -73,22 +162,41 @@ function Toast({ message, onClose }) {
   }, [onClose])
 
   return (
-    <div className="fixed bottom-6 right-6 bg-white text-gray-900 px-5 py-3 rounded-xl shadow-lg text-sm font-medium z-50 animate-bounce">
+    <div className="fixed bottom-6 right-6 px-5 py-3 rounded-xl shadow-xl text-sm font-medium z-50"
+      style={{ background: C.text, color: 'white', border: `1px solid ${C.border}` }}>
       {message}
     </div>
   )
 }
 
+// ── Skeleton ──────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-6 min-h-32 animate-pulse" style={{ background: 'rgba(255,255,255,0.05)' }}>
-      <div className="h-3 w-16 rounded mb-4" style={{ background: 'rgba(255,255,255,0.1)' }} />
-      <div className="h-4 w-full rounded mb-2" style={{ background: 'rgba(255,255,255,0.1)' }} />
-      <div className="h-4 w-3/4 rounded" style={{ background: 'rgba(255,255,255,0.1)' }} />
+    <div className="rounded-2xl p-6 min-h-36 animate-pulse"
+      style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+      <div className="h-3 w-16 rounded-full mb-4"
+        style={{ background: C.border }} />
+      <div className="h-4 w-full rounded-full mb-2"
+        style={{ background: C.border }} />
+      <div className="h-4 w-2/3 rounded-full"
+        style={{ background: C.border }} />
     </div>
   )
 }
 
+// ── Empty State ───────────────────────────────────────────────
+function EmptyState({ icon, title, subtitle }) {
+  return (
+    <div className="rounded-2xl p-16 text-center"
+      style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+      <p className="text-5xl mb-4">{icon}</p>
+      <p className="font-semibold text-lg mb-2" style={{ color: C.text }}>{title}</p>
+      <p className="text-sm" style={{ color: C.textMuted }}>{subtitle}</p>
+    </div>
+  )
+}
+
+// ── Main App ──────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState('landing')
   const [tab, setTab] = useState('flashcards')
@@ -104,6 +212,7 @@ export default function App() {
   const [studyMode, setStudyMode] = useState('grid')
   const [toast, setToast] = useState(null)
 
+  // Keyboard shortcuts for study mode
   useEffect(() => {
     const handler = e => {
       if (flashcards.length === 0 || studyMode !== 'study') return
@@ -114,14 +223,12 @@ export default function App() {
         setFlipped(prev => ({ ...prev, [currentCard]: !prev[currentCard] }))
       }
     }
-
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [flashcards, studyMode, currentCard])
 
   const generate = async () => {
     if (!notes.trim()) return
-
     setLoading(true)
     setFlashcards([])
     setQuiz(null)
@@ -148,197 +255,105 @@ export default function App() {
     } catch {
       setToast('Something went wrong. Is the backend running?')
     }
-
     setLoading(false)
   }
 
   if (page === 'landing') return <Landing onEnter={() => setPage('app')} />
 
+  const tabs = [
+    { id: 'flashcards', label: '🃏 Flashcards' },
+    { id: 'quizzes', label: '📝 Quizzes' },
+    { id: 'summary', label: '📄 Summary' },
+  ]
+
+  const headings = {
+    flashcards: 'Generate Flashcards',
+    quizzes: 'Generate Quiz',
+    summary: 'Summarise Notes',
+  }
+
+  const btnLabels = {
+    flashcards: 'Generate Flashcards',
+    quizzes: 'Generate Quiz',
+    summary: 'Summarise',
+  }
+
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
+    <div className="min-h-screen" style={{ background: C.bg }}>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
-        <button onClick={() => setPage('landing')} className="text-white font-bold text-xl tracking-[0.28em] uppercase">
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-8 py-4 sticky top-0 z-40"
+        style={{
+          background: 'rgba(247,245,240,0.85)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${C.border}`
+        }}>
+        <button onClick={() => setPage('landing')}
+          className="font-black text-lg tracking-[0.2em] uppercase transition-opacity hover:opacity-70"
+          style={{ color: C.text }}>
           Synapic
         </button>
-        <div className="flex gap-2">
-          {['flashcards', 'quizzes', 'summary'].map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="px-4 py-2 rounded-full text-sm font-medium capitalize transition-all"
-              style={
-                tab === t
-                  ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
-                  : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
-              }
-            >
-              {t === 'flashcards' ? 'Flashcards' : t === 'quizzes' ? 'Quizzes' : 'Summary'}
+
+        {/* Tabs */}
+        <div className="flex gap-1 p-1 rounded-full"
+          style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+              style={tab === t.id
+                ? { background: C.accentGrad, color: 'white' }
+                : { color: C.textMuted, background: 'transparent' }
+              }>
+              {t.label}
             </button>
           ))}
         </div>
+
+        <div style={{ width: '120px' }} />
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">
-            {tab === 'flashcards' ? 'Generate Flashcards' : tab === 'quizzes' ? 'Generate Quiz' : 'Summarise Notes'}
+      {/* Main content */}
+      <div className="max-w-4xl mx-auto px-6 py-10">
+
+        {/* Input section */}
+        <div className="rounded-3xl p-8 mb-8"
+          style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+          <h2 className="text-xl font-bold mb-1" style={{ color: C.text }}>
+            {headings[tab]}
           </h2>
-          <p className="text-gray-400 text-sm mb-4">Paste your lecture notes below</p>
+          <p className="text-sm mb-5" style={{ color: C.textMuted }}>
+            Paste your lecture notes or textbook content below
+          </p>
           <textarea
-            className="w-full h-44 rounded-2xl p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}
+            className="w-full h-40 rounded-2xl p-4 text-sm resize-none focus:outline-none transition-all"
+            style={{
+              background: C.bg,
+              border: `1.5px solid ${C.border}`,
+              color: C.text,
+              outline: 'none',
+            }}
+            onFocus={e => e.target.style.borderColor = C.accent}
+            onBlur={e => e.target.style.borderColor = C.border}
             placeholder="Paste your notes here..."
             value={notes}
             onChange={e => setNotes(e.target.value)}
           />
-          <button
-            onClick={generate}
-            disabled={loading || !notes.trim()}
-            className="mt-3 px-6 py-3 rounded-full font-semibold text-white transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-            style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
-          >
-            {loading ? 'Generating...' : tab === 'flashcards' ? 'Generate Flashcards' : tab === 'quizzes' ? 'Generate Quiz' : 'Summarise'}
-          </button>
-        </div>
-
-        {tab === 'quizzes' && !loading && quiz && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-400 text-sm">{quiz.length} questions</p>
-              {quizSubmitted && (
-                <p className="text-sm font-semibold" style={{ color: '#a78bfa' }}>
-                  Score: {Object.entries(quizAnswers).filter(([i, ans]) => ans === quiz[i].correct).length} / {quiz.length}
-                </p>
-              )}
-            </div>
-
-            {quiz.map((q, i) => (
-              <div
-                key={i}
-                className="rounded-2xl p-6"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                <p className="text-white font-medium mb-4">{i + 1}. {q.question}</p>
-                <div className="space-y-2">
-                  {q.options.map(opt => {
-                    const selected = quizAnswers[i] === opt.label
-                    const isCorrect = opt.label === q.correct
-                    let bg = 'rgba(255,255,255,0.05)'
-                    let border = 'rgba(255,255,255,0.1)'
-
-                    if (quizSubmitted && isCorrect) {
-                      bg = 'rgba(34,197,94,0.2)'
-                      border = '#22c55e'
-                    }
-
-                    if (quizSubmitted && selected && !isCorrect) {
-                      bg = 'rgba(239,68,68,0.2)'
-                      border = '#ef4444'
-                    }
-
-                    if (!quizSubmitted && selected) {
-                      bg = 'rgba(124,58,237,0.3)'
-                      border = '#7c3aed'
-                    }
-
-                    return (
-                      <button
-                        key={opt.label}
-                        onClick={() => !quizSubmitted && setQuizAnswers(prev => ({ ...prev, [i]: opt.label }))}
-                        className="w-full text-left px-4 py-3 rounded-xl text-sm text-white transition-all"
-                        style={{ background: bg, border: `1px solid ${border}` }}
-                      >
-                        <span className="font-bold mr-2">{opt.label}.</span>
-                        {opt.text}
-                      </button>
-                    )
-                  })}
-                </div>
-                {quizSubmitted && (
-                  <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    {q.explanation}
-                  </p>
-                )}
-              </div>
-            ))}
-
-            {!quizSubmitted && (
-              <button
-                onClick={() => setQuizSubmitted(true)}
-                disabled={Object.keys(quizAnswers).length < quiz.length}
-                className="px-6 py-3 rounded-full font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
-                style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
-              >
-                Submit Quiz
-              </button>
-            )}
-          </div>
-        )}
-
-        {tab === 'summary' && !loading && summary && (
-          <div
-            className="rounded-2xl p-8 space-y-6"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-          >
-            <div>
-              <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Summary
-              </p>
-              <h3 className="text-2xl font-bold text-white">{summary.title}</h3>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold mb-2" style={{ color: '#a78bfa' }}>Overview</p>
-              <p className="text-sm text-gray-200 leading-relaxed">{summary.overview}</p>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold mb-3" style={{ color: '#a78bfa' }}>Key Points</p>
-              <div className="space-y-3">
-                {summary.key_points.map((point, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl px-4 py-3 text-sm text-gray-100"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  >
-                    {point}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold mb-2" style={{ color: '#a78bfa' }}>Conclusion</p>
-              <p className="text-sm text-gray-200 leading-relaxed">{summary.conclusion}</p>
-            </div>
-          </div>
-        )}
-        {/* Coming Soon placeholder when no results yet */}
-        {tab !== 'flashcards' && !loading && !quiz && !summary && (
-          <div className="rounded-2xl p-12 text-center"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <p className="text-4xl mb-4">{tab === 'quizzes' ? '📝' : '📄'}</p>
-            <p className="text-white font-semibold text-lg mb-2">
-              {tab === 'quizzes' ? 'Ready to Quiz Yourself?' : 'Ready to Summarise?'}
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs" style={{ color: C.textLight }}>
+              {notes.length > 0 ? `${notes.length} characters` : 'Tip: more notes = better results'}
             </p>
-            <p className="text-gray-400 text-sm">Paste your notes above and hit generate.</p>
+            <button
+              onClick={generate}
+              disabled={loading || !notes.trim()}
+              className="px-6 py-3 rounded-full font-semibold text-white text-sm transition-all hover:scale-105 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ background: C.accentGrad }}>
+              {loading ? 'Generating...' : btnLabels[tab]}
+            </button>
+          </div>
         </div>
-         )}
 
-         {/* Flashcards placeholder when no results yet */}
-        {tab === 'flashcards' && !loading && flashcards.length === 0 && (
-          <div className="rounded-2xl p-12 text-center"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            
-            <p className="text-4xl mb-4">🃏</p>
-            <p className="text-white font-semibold text-lg mb-2">Ready to Make Flashcards?</p>
-            <p className="text-gray-400 text-sm">Paste your notes above and hit generate.</p>
-         </div>
-        )}
-
-
+        {/* ── Flashcards ───────────────────────────────── */}
         {tab === 'flashcards' && (
           <div>
             {loading && (
@@ -347,47 +362,53 @@ export default function App() {
               </div>
             )}
 
+            {!loading && flashcards.length === 0 && (
+              <EmptyState icon="🃏" title="Ready to Make Flashcards?" subtitle="Paste your notes above and hit generate." />
+            )}
+
             {!loading && flashcards.length > 0 && (
               <div>
+                {/* Controls */}
                 <div className="flex items-center justify-between mb-5">
-                  <p className="text-gray-400 text-sm">{flashcards.length} cards generated</p>
-                  <div className="flex gap-2">
-                    {['grid', 'study'].map(mode => (
-                      <button
-                        key={mode}
-                        onClick={() => setStudyMode(mode)}
+                  <p className="text-sm font-medium" style={{ color: C.textMuted }}>
+                    {flashcards.length} cards generated
+                  </p>
+                  <div className="flex gap-1 p-1 rounded-full"
+                    style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                    {['grid', 'study'].map(m => (
+                      <button key={m} onClick={() => setStudyMode(m)}
                         className="px-4 py-2 rounded-full text-sm font-medium capitalize transition-all"
-                        style={
-                          studyMode === mode
-                            ? { background: 'linear-gradient(90deg, #7c3aed, #db2777)', color: 'white' }
-                            : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }
-                        }
-                      >
-                        {mode === 'grid' ? 'Grid' : 'Study'}
+                        style={studyMode === m
+                          ? { background: C.accentGrad, color: 'white' }
+                          : { color: C.textMuted }
+                        }>
+                        {m === 'grid' ? '⊞ Grid' : '▶ Study'}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Grid */}
                 {studyMode === 'grid' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {flashcards.map((card, i) => (
-                      <div
-                        key={i}
-                        onClick={() => setFlipped(prev => ({ ...prev, [i]: !prev[i] }))}
-                        className="rounded-2xl p-6 cursor-pointer min-h-36 flex flex-col justify-between transition-all hover:scale-105"
+                      <div key={i}
+                        onClick={() => setFlipped(p => ({ ...p, [i]: !p[i] }))}
+                        className="rounded-2xl p-6 cursor-pointer min-h-36 flex flex-col justify-between transition-all hover:scale-105 hover:shadow-md"
                         style={{
-                          background: flipped[i] ? 'linear-gradient(135deg, #7c3aed33, #db277733)' : 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                        }}
-                      >
-                        <p className="text-xs uppercase tracking-widest mb-3" style={{ color: flipped[i] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
+                          background: flipped[i] ? C.accentGrad : C.bgCard,
+                          border: `1px solid ${flipped[i] ? 'transparent' : C.border}`,
+                        }}>
+                        <p className="text-xs uppercase tracking-widest mb-3 font-medium"
+                          style={{ color: flipped[i] ? 'rgba(255,255,255,0.6)' : C.textLight }}>
                           {flipped[i] ? 'Answer' : 'Question'}
                         </p>
-                        <p className="text-sm text-white leading-relaxed">
+                        <p className="text-sm leading-relaxed font-medium"
+                          style={{ color: flipped[i] ? 'white' : C.text }}>
                           {flipped[i] ? card.answer : card.question}
                         </p>
-                        <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                        <p className="text-xs mt-3"
+                          style={{ color: flipped[i] ? 'rgba(255,255,255,0.4)' : C.textLight }}>
                           Click to flip
                         </p>
                       </div>
@@ -395,71 +416,234 @@ export default function App() {
                   </div>
                 )}
 
+                {/* Study mode */}
                 {studyMode === 'study' && (
                   <div className="flex flex-col items-center">
-                    <div className="w-full max-w-2xl mb-4">
-                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    {/* Progress */}
+                    <div className="w-full max-w-2xl mb-6">
+                      <div className="flex justify-between text-xs mb-2"
+                        style={{ color: C.textMuted }}>
                         <span>Card {currentCard + 1} of {flashcards.length}</span>
-                        <span>{Math.round(((currentCard + 1) / flashcards.length) * 100)}%</span>
+                        <span>{Math.round(((currentCard + 1) / flashcards.length) * 100)}% complete</span>
                       </div>
-                      <div className="w-full h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                        <div
-                          className="h-1 rounded-full transition-all"
+                      <div className="w-full h-1.5 rounded-full" style={{ background: C.border }}>
+                        <div className="h-1.5 rounded-full transition-all"
                           style={{
                             width: `${((currentCard + 1) / flashcards.length) * 100}%`,
-                            background: 'linear-gradient(90deg, #7c3aed, #db2777)',
-                          }}
-                        />
+                            background: C.accentGrad
+                          }} />
                       </div>
                     </div>
 
+                    {/* Card */}
                     <div
-                      onClick={() => setFlipped(prev => ({ ...prev, [currentCard]: !prev[currentCard] }))}
-                      className="w-full max-w-2xl rounded-3xl p-12 cursor-pointer min-h-64 flex flex-col items-center justify-center text-center transition-all hover:scale-102"
+                      onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
+                      className="w-full max-w-2xl rounded-3xl p-14 cursor-pointer min-h-72 flex flex-col items-center justify-center text-center transition-all hover:shadow-xl mb-6"
                       style={{
-                        background: flipped[currentCard]
-                          ? 'linear-gradient(135deg, #7c3aed33, #db277733)'
-                          : 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                      }}
-                    >
-                      <p className="text-xs uppercase tracking-widest mb-6" style={{ color: flipped[currentCard] ? '#f472b6' : 'rgba(255,255,255,0.4)' }}>
+                        background: flipped[currentCard] ? C.accentGrad : C.bgCard,
+                        border: `1px solid ${flipped[currentCard] ? 'transparent' : C.border}`,
+                        boxShadow: flipped[currentCard] ? `0 20px 60px ${C.accent}30` : '0 4px 24px rgba(0,0,0,0.06)'
+                      }}>
+                      <p className="text-xs uppercase tracking-widest mb-6 font-medium"
+                        style={{ color: flipped[currentCard] ? 'rgba(255,255,255,0.6)' : C.textLight }}>
                         {flipped[currentCard] ? 'Answer' : 'Question'}
                       </p>
-                      <p className="text-xl text-white leading-relaxed">
+                      <p className="text-xl font-semibold leading-relaxed"
+                        style={{ color: flipped[currentCard] ? 'white' : C.text }}>
                         {flipped[currentCard] ? flashcards[currentCard].answer : flashcards[currentCard].question}
                       </p>
-                      <p className="text-xs mt-8" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                        Click to flip. Space to flip. Use arrow keys to navigate.
+                      <p className="text-xs mt-10"
+                        style={{ color: flipped[currentCard] ? 'rgba(255,255,255,0.4)' : C.textLight }}>
+                        Click · Space to flip · ← → to navigate
                       </p>
                     </div>
 
-                    <div className="flex gap-4 mt-6">
+                    <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          setFlipped({})
-                          setCurrentCard(i => Math.max(i - 1, 0))
-                        }}
+                        onClick={() => { setFlipped({}); setCurrentCard(i => Math.max(i - 1, 0)) }}
                         disabled={currentCard === 0}
-                        className="px-6 py-3 rounded-full font-medium text-sm transition-all disabled:opacity-30"
-                        style={{ background: 'rgba(255,255,255,0.08)', color: 'white' }}
-                      >
-                        Previous
+                        className="px-6 py-3 rounded-full text-sm font-medium transition-all disabled:opacity-30 hover:shadow-sm"
+                        style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
+                        ← Previous
                       </button>
                       <button
-                        onClick={() => {
-                          setFlipped({})
-                          setCurrentCard(i => Math.min(i + 1, flashcards.length - 1))
-                        }}
+                        onClick={() => { setFlipped({}); setCurrentCard(i => Math.min(i + 1, flashcards.length - 1)) }}
                         disabled={currentCard === flashcards.length - 1}
-                        className="px-6 py-3 rounded-full font-medium text-sm transition-all disabled:opacity-30"
-                        style={{ background: 'rgba(255,255,255,0.08)', color: 'white' }}
-                      >
-                        Next
+                        className="px-6 py-3 rounded-full text-sm font-medium transition-all disabled:opacity-30 hover:shadow-sm"
+                        style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
+                        Next →
                       </button>
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Quizzes ──────────────────────────────────── */}
+        {tab === 'quizzes' && (
+          <div>
+            {loading && (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            )}
+
+            {!loading && !quiz && (
+              <EmptyState icon="📝" title="Ready to Quiz Yourself?" subtitle="Paste your notes above and hit generate." />
+            )}
+
+            {!loading && quiz && (
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium" style={{ color: C.textMuted }}>
+                    {quiz.length} questions
+                  </p>
+                  {quizSubmitted && (
+                    <div className="px-4 py-2 rounded-full text-sm font-bold"
+                      style={{ background: C.accentLight, color: C.accent }}>
+                      Score: {Object.entries(quizAnswers).filter(([i, ans]) => ans === quiz[i].correct).length} / {quiz.length}
+                    </div>
+                  )}
+                </div>
+
+                {quiz.map((q, i) => (
+                  <div key={i} className="rounded-2xl p-6"
+                    style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                    <p className="font-semibold mb-4 text-sm leading-relaxed"
+                      style={{ color: C.text }}>
+                      {i + 1}. {q.question}
+                    </p>
+                    <div className="space-y-2">
+                      {q.options.map(opt => {
+                        const selected = quizAnswers[i] === opt.label
+                        const isCorrect = opt.label === q.correct
+                        let bg = C.bg
+                        let border = C.border
+                        let color = C.text
+
+                        if (quizSubmitted && isCorrect) {
+                          bg = C.successLight; border = C.success; color = C.success
+                        }
+                        if (quizSubmitted && selected && !isCorrect) {
+                          bg = C.dangerLight; border = C.danger; color = C.danger
+                        }
+                        if (!quizSubmitted && selected) {
+                          bg = C.accentLight; border = C.accent; color = C.accent
+                        }
+
+                        return (
+                          <button key={opt.label}
+                            onClick={() => !quizSubmitted && setQuizAnswers(p => ({ ...p, [i]: opt.label }))}
+                            className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all hover:opacity-90"
+                            style={{ background: bg, border: `1.5px solid ${border}`, color }}>
+                            <span className="font-bold mr-2">{opt.label}.</span>
+                            {opt.text}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {quizSubmitted && (
+                      <div className="mt-4 px-4 py-3 rounded-xl text-xs leading-relaxed"
+                        style={{ background: C.accentLight, color: C.accentDark }}>
+                        💡 {q.explanation}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {!quizSubmitted && (
+                  <button
+                    onClick={() => setQuizSubmitted(true)}
+                    disabled={Object.keys(quizAnswers).length < quiz.length}
+                    className="px-6 py-3 rounded-full font-semibold text-white text-sm transition-all hover:scale-105 disabled:opacity-40"
+                    style={{ background: C.accentGrad }}>
+                    Submit Quiz →
+                  </button>
+                )}
+
+                {quizSubmitted && (
+                  <button
+                    onClick={() => { setQuiz(null); setQuizAnswers({}); setQuizSubmitted(false) }}
+                    className="px-6 py-3 rounded-full font-semibold text-sm transition-all hover:scale-105"
+                    style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
+                    Try Again
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Summary ──────────────────────────────────── */}
+        {tab === 'summary' && (
+          <div>
+            {loading && <SkeletonCard />}
+
+            {!loading && !summary && (
+              <EmptyState icon="📄" title="Ready to Summarise?" subtitle="Paste your notes above and hit generate." />
+            )}
+
+            {!loading && summary && (
+              <div className="space-y-4">
+                {/* Title */}
+                <div className="rounded-2xl p-8"
+                  style={{ background: C.accentGrad }}>
+                  <p className="text-xs uppercase tracking-widest mb-2 font-medium"
+                    style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    Summary
+                  </p>
+                  <h3 className="text-2xl font-black text-white leading-tight">
+                    {summary.title}
+                  </h3>
+                </div>
+
+                {/* Overview */}
+                <div className="rounded-2xl p-6"
+                  style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-3"
+                    style={{ color: C.accent }}>
+                    Overview
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: C.text }}>
+                    {summary.overview}
+                  </p>
+                </div>
+
+                {/* Key points */}
+                <div className="rounded-2xl p-6"
+                  style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-4"
+                    style={{ color: C.accent }}>
+                    Key Points
+                  </p>
+                  <div className="space-y-3">
+                    {summary.key_points.map((point, i) => (
+                      <div key={i} className="flex gap-3 items-start">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                          style={{ background: C.accentLight, color: C.accent }}>
+                          {i + 1}
+                        </div>
+                        <p className="text-sm leading-relaxed" style={{ color: C.text }}>
+                          {point}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conclusion */}
+                <div className="rounded-2xl p-6"
+                  style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-3"
+                    style={{ color: C.accent }}>
+                    Conclusion
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: C.text }}>
+                    {summary.conclusion}
+                  </p>
+                </div>
               </div>
             )}
           </div>
