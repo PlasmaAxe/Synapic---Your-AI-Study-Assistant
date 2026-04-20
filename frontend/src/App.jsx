@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import synapicLogo from './assets/synapicLogo1.png'
 
 // ── Design tokens ─────────────────────────────────────────────
 const C = {
@@ -62,30 +63,39 @@ function Landing({ onEnter }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: C.bg }}>
 
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-10 py-6"
-        style={{ borderBottom: `1px solid ${C.border}` }}>
-        <span className="font-black text-xl tracking-[0.2em] uppercase"
-          style={{ color: C.text }}>
-          Synapic
-        </span>
-        <div className="flex items-center gap-4">
-          <button onClick={onEnter}
-            className="text-sm font-medium transition-colors"
-            style={{ color: C.textMuted }}>
-            Sign In
-          </button>
-          <button onClick={onEnter}
-            className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-105"
-            style={{ background: C.accentGrad }}>
-            Get Started Free
-          </button>
-        </div>
-      </nav>
+    {/* Nav */}
+    <nav className="flex items-center justify-between px-8 py-4 sticky top-0 z-40"
+      style={{
+          background: 'rgba(247,245,240,0.85)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${C.border}`
+         }}>
+      <div className="flex items-center">
+      <img 
+        src={synapicLogo} 
+        alt="Synapic" 
+        className="h-20 w-auto object-contain" 
+      />
+      </div>
+
+    {/* Auth Buttons */}
+    <div className="flex items-center gap-6">
+      <button onClick={onEnter}
+        className="text-sm font-medium transition-colors hover:text-white"
+        style={{ color: C.textMuted }}>
+        Sign In
+      </button>
+      <button onClick={onEnter}
+        className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-105"
+        style={{ background: C.accentGrad }}>
+        Get Started Free
+      </button>
+    </div>
+    </nav>
 
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
-
+        
         {/* Badge */}
         <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest"
           style={{ background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30` }}>
@@ -267,9 +277,9 @@ export default function App() {
   ]
 
   const headings = {
-    flashcards: 'Generate Flashcards',
-    quizzes: 'Generate Quiz',
-    summary: 'Summarise Notes',
+    flashcards: 'Generate Flashcards - Supercharge Your Recall!',
+    quizzes: 'Generate Quiz - Test Your Knowledge!',
+    summary: 'Summarise Notes - Brief Yourself!',
   }
 
   const btnLabels = {
@@ -290,9 +300,12 @@ export default function App() {
           borderBottom: `1px solid ${C.border}`
         }}>
         <button onClick={() => setPage('landing')}
-          className="font-black text-lg tracking-[0.2em] uppercase transition-opacity hover:opacity-70"
-          style={{ color: C.text }}>
-          Synapic
+          className="transition-opacity hover:opacity-70">
+          <img
+            src={synapicLogo}
+            alt="Synapic"
+            className="h-20 w-auto object-contain" 
+          />
         </button>
 
         {/* Tabs */}
