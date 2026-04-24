@@ -175,7 +175,7 @@ async def generate_summary(payload: NotesInput | str):
         "Summarise these study notes.\n"
         "Return valid JSON only — no markdown, no backticks, no explanation.\n"
         "Use exactly this format:\n"
-        '{"title": "...", "overview": "2-3 sentence overview", "key_points": ["point 1", "point 2", "point 3"], "conclusion": "..."}\n\n'
+        '{"title": "...", "overview": "5-10 sentence overview", "key_points": ["point 1", "point 2", "point 3"], "conclusion": "..."}\n\n'
         f"Notes:\n{notes}"
     )
 

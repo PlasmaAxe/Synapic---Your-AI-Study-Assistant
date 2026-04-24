@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import synapicLogo from './assets/synapicLogo1.png'
+import { supabase } from './supabase';
+import Authentication from './Authentication';
+
 
 // ── Design tokens ─────────────────────────────────────────────
 const C = {
@@ -22,6 +25,8 @@ const C = {
   successLight: '#F0FFF4',
   warning: '#D69E2E',
 }
+
+// ── Authentication stuff ────────────────────────
 
 // ── Mock flashcard for landing preview ────────────────────────
 function MockCard() {
@@ -59,7 +64,7 @@ function MockCard() {
 }
 
 // ── Landing ───────────────────────────────────────────────────
-function Landing({ onEnter }) {
+function Landing({ onEnter, user, onSignOut }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: C.bg }}>
 
@@ -80,17 +85,42 @@ function Landing({ onEnter }) {
 
     {/* Auth Buttons */}
     <div className="flex items-center gap-6">
-      <button onClick={onEnter}
-        className="text-sm font-medium transition-colors hover:text-white"
-        style={{ color: C.textMuted }}>
-        Sign In
-      </button>
-      <button onClick={onEnter}
-        className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-105"
-        style={{ background: C.accentGrad }}>
-        Get Started Free
-      </button>
-    </div>
+      {user ? (
+        <>
+          <span className="text-sm font-medium" style={{ color: C.textMuted }}>
+            {user.email.split('@')[0]}
+          </span>
+          <button
+            onClick={onSignOut}
+            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:opacity-80"
+            style={{
+              background: C.bg,
+              color: C.textMuted,
+              border: `1px solid ${C.border}`
+            }}
+          >
+            Sign out
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={onEnter}
+            className="text-sm font-medium transition-colors hover:text-white"
+            style={{ color: C.textMuted }}
+          >
+            Sign In
+          </button>
+          <button
+            onClick={onEnter}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-105"
+            style={{ background: C.accentGrad }}
+          >
+            Get Started Free
+          </button>
+        </>
+      )}
+</div>
     </nav>
 
       {/* Hero */}
@@ -209,6 +239,8 @@ function EmptyState({ icon, title, subtitle }) {
 // ── Main App ──────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState('landing')
+  const [user, setUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState('flashcards')
   const [notes, setNotes] = useState('')
   const [flashcards, setFlashcards] = useState([])
@@ -221,6 +253,23 @@ export default function App() {
   const [currentCard, setCurrentCard] = useState(0)
   const [studyMode, setStudyMode] = useState('grid')
   const [toast, setToast] = useState(null)
+
+  //authentication stuff:
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Keyboard shortcuts for study mode
   useEffect(() => {
@@ -268,7 +317,39 @@ export default function App() {
     setLoading(false)
   }
 
-  if (page === 'landing') return <Landing onEnter={() => setPage('app')} />
+  //authentication stuff:
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: '#F7F5F0' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 animate-spin"
+            style={{ borderColor: '#0D9373', borderTopColor: 'transparent' }} />
+          <p className="text-sm" style={{ color: '#6B6860' }}>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+  if (page === 'landing') 
+    return (
+    <Landing 
+    onEnter={() => setPage('app')} 
+     user ={user}
+    onSignOut={() => supabase.auth.signOut()}
+    />
+
+    )
+
+  if (!user) {
+    return (
+      <Authentication
+        onLogin={() => setPage('app')}
+        onBack={() => setPage('landing')}
+      />
+    )
+    
+  }
 
   const tabs = [
     { id: 'flashcards', label: '🃏 Flashcards' },
@@ -323,7 +404,28 @@ export default function App() {
           ))}
         </div>
 
-        <div style={{ width: '120px' }} />
+        {/* User info + sign out */}
+        <div className="flex items-center gap-3" style={{ width: '120px', justifyContent: 'flex-end' }}>
+          {user && (
+            <>
+              {/* Show the first part of their email so they know who's logged in */}
+              <span className="text-xs hidden md:block"
+                style={{ color: C.textMuted }}> 
+                {user.email.split('@')[0]}
+              </span>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:opacity-80"
+                style={{
+                  background: C.bg,
+                  color: C.textMuted,
+                  border: `1px solid ${C.border}`
+                }}>
+                Sign out
+              </button>
+            </>
+          )}
+        </div>
       </nav>
 
       {/* Main content */}
