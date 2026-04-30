@@ -8,6 +8,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
 from pydantic import BaseModel, Field
+import cors
+
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",") #allows us to specify allowed origins in the .env file, defaulting to localhost:5173 for development
 
 ENV_PATH = Path(__file__).with_name(".env") #this loads the .env file from the backend directory, not the root of the project (to get api keys and whatnot)
 load_dotenv(dotenv_path=ENV_PATH)
@@ -20,7 +23,7 @@ app = FastAPI(title="Synapic API") #this creates the backend server using FastAP
 
 app.add_middleware( #this sets up CORS middleware to allow requests from the frontend (running on localhost:5173) to access the backend API without issues.
     CORSMiddleware,
-    allow_origins=DEFAULT_ALLOWED_ORIGINS,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
