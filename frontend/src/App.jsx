@@ -299,15 +299,15 @@ export default function App() {
 
     try {
       if (tab === 'flashcards') {
-        const res = await axios.post('http://localhost:8000/generate-flashcards', { text: notes })
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-flashcards`, { text: notes })
         setFlashcards(res.data.flashcards)
         setToast(`Generated ${res.data.flashcards.length} flashcards`)
       } else if (tab === 'quizzes') {
-        const res = await axios.post('http://localhost:8000/generate-quiz', { text: notes })
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-quiz`, { text: notes })
         setQuiz(res.data.quiz)
         setToast(`Generated ${res.data.quiz.length} questions`)
       } else if (tab === 'summary') {
-        const res = await axios.post('http://localhost:8000/generate-summary', { text: notes })
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-summary`, { text: notes })
         setSummary(res.data)
         setToast('Summary generated')
       }
