@@ -13,19 +13,15 @@ ENV_PATH = Path(__file__).with_name(".env") #this loads the .env file from the b
 load_dotenv(dotenv_path=ENV_PATH)
 
 DEFAULT_ALLOWED_ORIGINS = "http://localhost:5173"
-allowed_origins = [
-    origin.strip()
-    for origin in os.getenv("ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS).split(",")
-    if origin.strip()
-] # allows us to specify allowed origins in Railway/backend .env, defaulting to localhost:5173 for development
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",") # allows us to specify allowed origins in Railway/backend .env, defaulting to localhost:5173 for development
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 app = FastAPI(title="Synapic API") #this creates the backend server using FastAPI, which will handle requests from the frontend and interact with the Groq API to generate flashcards based on user input.
 
 app.add_middleware( #this sets up CORS middleware to allow requests from the frontend (running on localhost:5173) to access the backend API without issues.
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
