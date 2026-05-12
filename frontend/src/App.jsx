@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import synapicLogo from './assets/synapicLogo1.png'
 import { supabase } from './supabase';
@@ -253,6 +253,9 @@ export default function App() {
   const [currentCard, setCurrentCard] = useState(0)
   const [studyMode, setStudyMode] = useState('grid')
   const [toast, setToast] = useState(null)
+  const [savedDecks, setSavedDecks] = useState([])
+  const [decksLoading, setDecksLoading] = useState(false)
+
 
   //authentication stuff:
   useEffect(() => {
@@ -286,6 +289,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [flashcards, studyMode, currentCard])
 
+  //generate function:
+
   const generate = async () => {
     if (!notes.trim()) return
     setLoading(true)
@@ -317,7 +322,68 @@ export default function App() {
     setLoading(false)
   }
 
-  //authentication stuff:
+
+//save deck stuff:
+const saveDeck = async () => {
+  //Guard: must be loggeed in and have flashcards to save
+  if (!user || flashcards.length === 0) return
+  try {
+    // Step 1: create the deck row and get back its ID
+    // We auto-generate a title from the first 50 chars of notes
+    const title = notes.trim().slice(0, 50) + (notes.length > 50 ? '...' : '')
+    const {data:deck, error: deckError} = await supabase
+      .from('decks')
+      .insert({ user_id: user.id, title })
+      .select()                            //returns the inserted row including the generated ID
+      .single()                           //unwraps the array since we only inserted one row
+    if (deckError) throw deckError
+    
+    // Step 2: insert all flashcards with the returned deck ID
+    const cardRows = flashcards.map(card => ({
+      deck_id: deck.id,
+      question: card.question,
+      answer: card.answer,
+    }))
+    const { error: cardsError } = await supabase
+      .from('flashcards')
+      .insert(cardRows)
+
+    if (cardsError) throw cardsError
+    setToast('Deck saved to your account!')
+
+  } catch (error) {
+    console.error('Error saving deck:', error)
+    setToast('Failed to save deck. Please try again.')
+  }
+}
+
+//loads decks through supabase, filtered by user id and ordered by creation date (newest first)
+const loadDecks = useCallback(async () => { 
+  if (!user) return
+  setDecksLoading(true)
+
+  try {
+    // Fetch all decks for/belogning to the user, newest first
+    const { data, error } = await supabase
+      .from('decks')
+      .select('*')
+      .eq('user_id', user.id) //added so users only fetch there own decks
+      .order('created_at', { ascending: false })
+
+    if (error) throw error 
+    setSavedDecks(data)    
+  } catch (err) {
+    console.error(err)
+  }
+  setDecksLoading(false)
+}, [user])
+
+  // Load decks when user navigates to decks tab
+  useEffect(() => {
+    if (tab === 'decks') loadDecks()
+  }, [tab, loadDecks])
+
+ //authentication stuff:
 
   if (authLoading) {
     return (
@@ -355,6 +421,7 @@ export default function App() {
     { id: 'flashcards', label: '🃏 Flashcards' },
     { id: 'quizzes', label: '📝 Quizzes' },
     { id: 'summary', label: '📄 Summary' },
+    { id: 'decks', label: '📚 My Decks' },
   ]
 
   const headings = {
@@ -485,9 +552,17 @@ export default function App() {
               <div>
                 {/* Controls */}
                 <div className="flex items-center justify-between mb-5">
-                  <p className="text-sm font-medium" style={{ color: C.textMuted }}>
-                    {flashcards.length} cards generated
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-medium" style={{ color: C.textMuted }}>
+                      {flashcards.length} cards generated
+                    </p>
+                    <button
+                      onClick={saveDeck}
+                      className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-80"
+                      style={{ background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30` }}>
+                      Save Deck
+                    </button>
+                  </div>
                   <div className="flex gap-1 p-1 rounded-full"
                     style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
                     {['grid', 'study'].map(m => (
@@ -759,6 +834,80 @@ export default function App() {
                     {summary.conclusion}
                   </p>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── My Decks ─────────────────────────────────── */}
+        {tab === 'decks' && (
+          <div>
+            {decksLoading && (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            )}
+
+            {!decksLoading && savedDecks.length === 0 && (
+              <EmptyState
+                icon="📚"
+                title="No saved decks yet"
+                subtitle="Generate some flashcards and hit Save Deck to store them here."
+              />
+            )}
+
+            {!decksLoading && savedDecks.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium mb-4" style={{ color: C.textMuted }}>
+                  {savedDecks.length} saved {savedDecks.length === 1 ? 'deck' : 'decks'}
+                </p>
+                {savedDecks.map(deck => (
+                  <div key={deck.id}
+                    className="rounded-2xl p-5 flex items-center justify-between transition-all hover:shadow-sm"
+                    style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                    <div>
+                      <p className="font-semibold text-sm mb-1" style={{ color: C.text }}>
+                        {deck.title}
+                      </p>
+                      <p className="text-xs" style={{ color: C.textLight }}>
+                        {new Date(deck.created_at).toLocaleDateString('en-NZ', {
+                          day: 'numeric', month: 'short', year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Load deck button — fetches cards and switches to flashcard view */}
+                      <button
+                        onClick={async () => {
+                          const { data } = await supabase
+                            .from('flashcards')
+                            .select('*')
+                            .eq('deck_id', deck.id)
+                          setFlashcards(data)
+                          setFlipped({})
+                          setCurrentCard(0)
+                          setStudyMode('grid')
+                          setTab('flashcards')
+                          setToast(`Loaded "${deck.title}"`)
+                        }}
+                        className="px-4 py-2 rounded-full text-xs font-semibold transition-all hover:opacity-80"
+                        style={{ background: C.accentLight, color: C.accent }}>
+                        Study
+                      </button>
+                      {/* Delete button */}
+                      <button
+                        onClick={async () => {
+                          await supabase.from('decks').delete().eq('id', deck.id)
+                          setSavedDecks(prev => prev.filter(d => d.id !== deck.id))
+                          setToast('Deck deleted')
+                        }}
+                        className="px-4 py-2 rounded-full text-xs font-semibold transition-all hover:opacity-80"
+                        style={{ background: C.dangerLight, color: C.danger }}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
