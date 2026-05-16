@@ -19,8 +19,8 @@ const C = {
   success: '#38A169',
 }
 
-export default function Authentication({ onLogin, onBack }) {
-  const [mode, setMode] = useState('signin')
+export default function Authentication({ onLogin, onBack, initialMode = 'signin' }) {
+  const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -40,12 +40,16 @@ export default function Authentication({ onLogin, onBack }) {
     setMessage({ text: '', type: '' })
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        setMessage({
-          text: 'Account created! Check your email to confirm, then sign in.',
-          type: 'success'
-        })
+        if (data.session) {
+          onLogin()
+        } else {
+          setMessage({
+            text: 'Account created! Check your email to confirm, then sign in.',
+            type: 'success'
+          })
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error

@@ -312,7 +312,7 @@ function MockCard() {
 }
 
 // ── Landing ──────────────────────────────────────────────────
-function Landing({ onEnter, user, onSignOut }) {
+function Landing({ onEnter, onAuth, user, onSignOut }) {
   const scrollY = useMotionValue(0)
   const heroRef = useRef(null)
   // Scramble triggers on mount
@@ -393,7 +393,7 @@ function Landing({ onEnter, user, onSignOut }) {
             </>
           ) : (
             <>
-              <button onClick={onEnter} style={{
+              <button onClick={() => onAuth('signin')} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: '14px', fontWeight: 500, color: C.textMuted,
               }}>
@@ -775,6 +775,7 @@ function UpgradePrompt({ onSignUp, onClose }) {
 // ── Main App ─────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState('landing')
+  const [authMode, setAuthMode] = useState('signin')
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState('flashcards')
@@ -793,9 +794,11 @@ export default function App() {
   const [decksLoading, setDecksLoading] = useState(false)
   const [deckStats, setDeckStats] = useState({ totalCards: 0 })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+
   const [guestGenerations, setGuestGenerations] = useState(() => {
     const saved = localStorage.getItem('synapic_guest_generations')
-    return saved ? parseInt(saved, 10) : 0
+    const parsed = saved ? parseInt(saved, 10) : 0
+    return Number.isNaN(parsed) ? 0 : parsed
   })
 
   // ── Auth listener ─────────────────────────────────────────
@@ -846,8 +849,9 @@ export default function App() {
       return
     }
 
+      // ── Guest generation limit check ─────────────────────────────
     if (!user && guestGenerations >= FREE_GENERATION_LIMIT) {
-      setShowUpgradePrompt(true)
+      setShowUpgradePrompt(true) //show the sign-up model instead
       return
     }
 
@@ -874,7 +878,9 @@ export default function App() {
         setSummary(res.data)
         setToast('✨ Summary generated')
       }
+
       if (!user) incrementGuestGenerations()
+
     } catch (err) {
       const status = err?.response?.status
       const detail = err?.response?.data?.detail
@@ -888,6 +894,8 @@ export default function App() {
     }
     setLoading(false)
   }
+
+
 
   // ── Save deck ─────────────────────────────────────────────
   const saveDeck = async () => {
@@ -934,6 +942,11 @@ export default function App() {
     if (tab === 'decks') loadDecks()
   }, [tab, loadDecks])
 
+  const openAuth = (mode = 'signin') => {
+    setAuthMode(mode)
+    setPage('auth')
+  }
+
   // ── Auth loading screen ───────────────────────────────────
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: C.bg }}>
@@ -948,15 +961,17 @@ export default function App() {
   if (page === 'landing') return (
     <Landing
       onEnter={() => setPage('app')}
+      onAuth={openAuth}
       user={user}
       onSignOut={() => supabase.auth.signOut()}
     />
   )
 
-  if (!user) return (
+  if (page === 'auth') return (
     <Authentication
       onLogin={() => setPage('app')}
       onBack={() => setPage('landing')}
+      initialMode={authMode}
     />
   )
 
@@ -997,7 +1012,7 @@ export default function App() {
       <AnimatePresence>
         {showUpgradePrompt && (
           <UpgradePrompt
-            onSignUp={() => { setShowUpgradePrompt(false); setPage('auth') }}
+            onSignUp={() => { setShowUpgradePrompt(false); openAuth('signup') }}
             onClose={() => setShowUpgradePrompt(false)}
           />
         )}
@@ -1018,7 +1033,7 @@ export default function App() {
         <div className="flex gap-1 p-1 rounded-full"
           style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
           {tabs.map(t => (
-            <motion.button key={t.id} onClick={() => setTab(t.id)}
+            <motion.button key={t.id} onClick={() => t.id === 'decks' && !user ? openAuth('signin') : setTab(t.id)}
               className="px-4 py-2 rounded-full text-sm font-semibold transition-all relative"
               style={tab === t.id
                 ? { color: 'white' }
@@ -1040,14 +1055,31 @@ export default function App() {
 
         {/* User + sign out */}
         <div className="flex items-center gap-3">
-          <span className="text-sm hidden md:block" style={{ color: C.textMuted }}>
-            {user.email.split('@')[0]}
-          </span>
-          <button onClick={() => supabase.auth.signOut()}
-            className="px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:opacity-80"
-            style={{ color: C.textMuted, borderColor: C.border, background: C.bg }}>
-            Sign Out
-          </button>
+          {user ? (
+            <>
+              <span className="text-sm hidden md:block" style={{ color: C.textMuted }}>
+                {user.email.split('@')[0]}
+              </span>
+              <button onClick={() => supabase.auth.signOut()}
+                className="px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:opacity-80"
+                style={{ color: C.textMuted, borderColor: C.border, background: C.bg }}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => openAuth('signin')}
+                className="px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:opacity-80"
+                style={{ color: C.textMuted, borderColor: C.border, background: C.bg }}>
+                Sign In
+              </button>
+              <button onClick={() => openAuth('signup')}
+                className="px-4 py-2 rounded-full text-sm font-bold text-white transition-all hover:opacity-90"
+                style={{ background: C.accentGrad, boxShadow: `0 4px 16px ${C.accent}30` }}>
+                Sign Up Free
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -1080,10 +1112,10 @@ export default function App() {
                     color: guestGenerations >= FREE_GENERATION_LIMIT ? C.danger : C.accentDark,
                     border: `1px solid ${guestGenerations >= FREE_GENERATION_LIMIT ? C.danger : C.accent}30`
                   }}
-                  onClick={() => setPage('auth')}>
+                  onClick={() => openAuth('signup')}>
                   <span>{guestGenerations >= FREE_GENERATION_LIMIT ? '🔒' : '✨'}</span>
                   {guestGenerations >= FREE_GENERATION_LIMIT
-                    ? 'No generations left — Sign up free'
+                    ? 'No generations left — Sign up free unlimited access!'
                     : `${FREE_GENERATION_LIMIT - guestGenerations} free generation${FREE_GENERATION_LIMIT - guestGenerations === 1 ? '' : 's'} remaining`
                   }
                 </motion.div>
