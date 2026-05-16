@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -40,10 +40,50 @@ class FlashcardsResponse(BaseModel):
     flashcards: List[Flashcard]
 
 
+MAX_INPUT_CHARS = 12000  # ~3,000 tokens, leaves room for system prompt + response
+
+
+def check_text_length(text: str) -> dict | None:
+    """Returns an error dict if text is too long, else None."""
+    if len(text) > MAX_INPUT_CHARS:
+        return {
+            "error": "text_too_long",
+            "message": f"Your text is {len(text):,} characters. Please keep it under {MAX_INPUT_CHARS:,} characters to avoid hitting the AI rate limit.",
+            "character_count": len(text),
+            "max_characters": MAX_INPUT_CHARS,
+        }
+    return None
+
+
 def get_client() -> Groq: #ensures key to run the app
     if not GROQ_API_KEY:
         raise HTTPException(status_code=500, detail="Missing GROQ_API_KEY environment variable")
     return Groq(api_key=GROQ_API_KEY)
+
+
+def create_chat_completion(prompt: str) -> Any:
+    try:
+        client = get_client()
+        return client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        error_str = str(exc)
+        if "429" in error_str or "rate_limit" in error_str.lower():
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "rate_limit",
+                    "message": "The AI service is temporarily rate-limited. Please wait 60 seconds and try again.",
+                },
+            ) from exc
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "ai_error", "message": error_str},
+        ) from exc
 
 
 def strip_code_fences(text: str) -> str: #cleans up the response/AI output to look presentable and so python can read it
@@ -68,6 +108,10 @@ def extract_notes(payload: NotesInput | str) -> str:
     if not notes:
         raise HTTPException(status_code=400, detail="Notes cannot be empty.")
 
+    length_error = check_text_length(notes)
+    if length_error:
+        raise HTTPException(status_code=400, detail=length_error)
+
     return notes
 
 
@@ -88,11 +132,7 @@ async def generate_flashcards(payload: NotesInput | str):
     )
 
     try:
-        client = get_client()
-        response = client.chat.completions.create( #sends the prompt
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        response = create_chat_completion(prompt) #sends the prompt
         raw_text = response.choices[0].message.content or ""
         cleaned_text = strip_code_fences(raw_text)
         data = json.loads(cleaned_text) #convert to python
@@ -143,11 +183,7 @@ async def generate_quiz(payload: NotesInput | str):
     )
 
     try:
-        client = get_client() 
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        response = create_chat_completion(prompt)
         raw_text = response.choices[0].message.content or ""
         cleaned = strip_code_fences(raw_text)
         data = json.loads(cleaned)
@@ -180,11 +216,7 @@ async def generate_summary(payload: NotesInput | str):
     )
 
     try:
-        client = get_client()
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        response = create_chat_completion(prompt)
         raw_text = response.choices[0].message.content or ""
         cleaned = strip_code_fences(raw_text)
         data = json.loads(cleaned)

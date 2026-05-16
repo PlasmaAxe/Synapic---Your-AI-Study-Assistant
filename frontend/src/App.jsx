@@ -25,6 +25,8 @@ const C = {
   successLight: '#F0FFF4',
   warning: '#D69E2E',
 }
+//input limit:
+const MAX_INPUT_CHARS = 12000
 
 // ── Authentication stuff ────────────────────────
 
@@ -293,6 +295,15 @@ export default function App() {
 
   const generate = async () => {
     if (!notes.trim()) return
+
+    // Character limit check before hitting the API.
+    if (notes.length > MAX_INPUT_CHARS) {
+      setToast(
+        `Text too long (${notes.length.toLocaleString()} chars). Please keep it under ${MAX_INPUT_CHARS.toLocaleString()} characters.`
+      )
+      return
+    }
+
     setLoading(true)
     setFlashcards([])
     setQuiz(null)
@@ -316,10 +327,22 @@ export default function App() {
         setSummary(res.data)
         setToast('Summary generated')
       }
-    } catch {
-      setToast('Something went wrong. Is the backend running?')
+    } catch (err) {
+      const status = err?.response?.status
+      const detail = err?.response?.data?.detail
+
+      if (status === 400 && detail?.error === 'text_too_long') {
+        setToast(
+          `Text too long (${detail.character_count.toLocaleString()} chars). Max is ${detail.max_characters.toLocaleString()} characters.`
+        )
+      } else if (status === 429) {
+        setToast('AI rate limit reached — please wait ~60 seconds and try again.')
+      } else {
+        setToast('Something went wrong. Is the backend running?')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
 
@@ -522,8 +545,16 @@ const loadDecks = useCallback(async () => {
             onChange={e => setNotes(e.target.value)}
           />
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs" style={{ color: C.textLight }}>
-              {notes.length > 0 ? `${notes.length} characters` : 'Tip: more notes = better results'}
+            <p
+              className="text-xs"
+              style={{
+                color: notes.length > MAX_INPUT_CHARS ? C.danger : C.textLight,
+                fontWeight: notes.length > MAX_INPUT_CHARS ? '600' : 'normal',
+              }}
+            >
+              {notes.length > 0
+                ? `${notes.length.toLocaleString()} / ${MAX_INPUT_CHARS.toLocaleString()} characters${notes.length > MAX_INPUT_CHARS ? ' — too long, please shorten' : ''}`
+                : 'Tip: more notes = better results'}
             </p>
             <button
               onClick={generate}
