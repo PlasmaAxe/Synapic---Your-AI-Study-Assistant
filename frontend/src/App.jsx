@@ -55,8 +55,8 @@ function CursorGlow() {
   const mouseX = useMotionValue(-200)
   const mouseY = useMotionValue(-200)
   // Spring config: lower stiffness = more lag (feels floaty and premium)
-  const springX = useSpring(mouseX, { stiffness: 80, damping: 20 })
-  const springY = useSpring(mouseY, { stiffness: 80, damping: 20 })
+  const springX = useSpring(mouseX, { stiffness: 240, damping: 28 })
+  const springY = useSpring(mouseY, { stiffness: 240, damping: 28 })
 
   useEffect(() => {
     const move = (e) => {
@@ -76,10 +76,10 @@ function CursorGlow() {
         y: springY,
         translateX: '-50%',
         translateY: '-50%',
-        width: '600px',
-        height: '600px',
+        width: '360px',
+        height: '360px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(13,147,115,0.12) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(13,147,115,0.08) 0%, transparent 68%)',
         pointerEvents: 'none',
         zIndex: 1,
       }}
@@ -97,18 +97,22 @@ function useTextScramble(text, trigger = true) {
   useEffect(() => {
     if (!trigger) return
     let iteration = 0
-    const totalFrames = text.length * 4 // how long the scramble runs
+    const framesPerCharacter = 3
+    const totalFrames = text.length * framesPerCharacter // how long the scramble runs
     const interval = setInterval(() => {
       setDisplay(
         text.split('').map((char, i) => {
           if (char === ' ') return ' '
-          if (i < iteration / 4) return text[i] // this character has resolved
+          if (i < iteration / framesPerCharacter) return text[i] // this character has resolved
           return chars[Math.floor(Math.random() * chars.length)] // still scrambling
         }).join('')
       )
       iteration++
-      if (iteration > totalFrames) clearInterval(interval)
-    }, 30)
+      if (iteration > totalFrames) {
+        setDisplay(text)
+        clearInterval(interval)
+      }
+    }, 22)
     return () => clearInterval(interval)
   }, [text, trigger])
 
@@ -157,23 +161,23 @@ function ParticleCanvas() {
       reset() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.vx = (Math.random() - 0.5) * 0.3
-        this.vy = (Math.random() - 0.5) * 0.3
-        this.radius = Math.random() * 1.5 + 0.5
-        this.alpha = Math.random() * 0.4 + 0.1
+        this.vx = (Math.random() - 0.5) * 0.4
+        this.vy = (Math.random() - 0.5) * 0.4
+        this.radius = Math.random() * 1.7 + 0.7
+        this.alpha = Math.random() * 0.5 + 0.18
       }
       update() {
         // Subtle mouse attraction — pulls particles gently toward cursor
         const dx = mouse.current.x - this.x
         const dy = mouse.current.y - this.y
         const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < 200) {
-          this.vx += dx * 0.00008
-          this.vy += dy * 0.00008
+        if (dist < 260) {
+          this.vx += dx * 0.00016
+          this.vy += dy * 0.00016
         }
         // Speed cap so particles don't fly off
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy)
-        if (speed > 0.8) { this.vx *= 0.8 / speed; this.vy *= 0.8 / speed }
+        if (speed > 1.15) { this.vx *= 1.15 / speed; this.vy *= 1.15 / speed }
 
         this.x += this.vx
         this.y += this.vy
@@ -193,14 +197,14 @@ function ParticleCanvas() {
 
     resize()
     // Create 80 particles — enough for density without hurting performance
-    particles = Array.from({ length: 80 }, () => new Particle())
+    particles = Array.from({ length: 95 }, () => new Particle())
     window.addEventListener('resize', resize)
 
     const track = (e) => {
       const rect = canvas.getBoundingClientRect()
       mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
-    canvas.addEventListener('mousemove', track)
+    window.addEventListener('mousemove', track)
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -210,13 +214,13 @@ function ParticleCanvas() {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
           const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
+          if (dist < 145) {
             // Line fades out as particles get further apart
             ctx.beginPath()
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(13,147,115,${0.15 * (1 - dist / 120)})`
-            ctx.lineWidth = 0.5
+            ctx.strokeStyle = `rgba(13,147,115,${0.26 * (1 - dist / 145)})`
+            ctx.lineWidth = 0.65
             ctx.stroke()
           }
         }
@@ -230,7 +234,7 @@ function ParticleCanvas() {
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
-      canvas.removeEventListener('mousemove', track)
+      window.removeEventListener('mousemove', track)
     }
   }, [])
 
@@ -242,7 +246,7 @@ function ParticleCanvas() {
         inset: 0,
         width: '100%',
         height: '100%',
-        opacity: 0.7,
+        opacity: 0.9,
       }}
     />
   )
