@@ -30,6 +30,20 @@ const C = {
 const MAX_INPUT_CHARS = 12000
 const FREE_GENERATION_LIMIT = 5
 
+const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const daysBetweenDateKeys = (fromKey, toKey) => {
+  if (!fromKey || !toKey) return Infinity
+  const from = new Date(`${fromKey}T00:00:00`)
+  const to = new Date(`${toKey}T00:00:00`)
+  return Math.round((to - from) / 86400000)
+}
+
 // ── Animation variants ───────────────────────────────────────
 // These are reusable animation configs we pass to Framer Motion
 const fadeUp = {
@@ -354,6 +368,27 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
     },
   ]
 
+  const testimonials = [
+    {
+      quote: "Don't fall behind, jump on the bandwagon now! This AI tool literally cut my study time in half before finals.",
+      name: 'James Smith',
+      role: 'PostGrad, UOA',
+      initials: 'JS',
+    },
+    {
+      quote: 'The summaries are scary accurate. I upload my 20-page biology readings and get the core concepts almost instantly!',
+      name: 'Elena Lopez',
+      role: 'Pre-Med Student',
+      initials: 'EL',
+    },
+    {
+      quote: 'Spaced repetition built-in is a game changer! I actually remember what I studied two weeks ago, which is a first..',
+      name: 'Ryan Chen',
+      role: 'Final Year, AUT',
+      initials: 'RC',
+    },
+  ]
+
   return (
     <div style={{ background: C.bg, minHeight: '100vh', overflowX: 'hidden' }}>
       <CursorGlow />
@@ -459,6 +494,21 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
               AI-Powered Study Tools
             </span>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.18 }}
+            style={{
+              fontSize: '12px',
+              fontWeight: 800,
+              color: C.textMuted,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              marginBottom: '18px',
+            }}>
+            Built by students, for students
+          </motion.p>
 
           {/* Headline with scramble effect */}
           <motion.h1
@@ -637,7 +687,109 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
         </div>
       </ScrollReveal>
 
-      {/* ── Final CTA section ─────────────────────────── */}
+      {/* Mission section */}
+      <ScrollReveal>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 40px 72px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '48px',
+            alignItems: 'center',
+            background: `linear-gradient(135deg, ${C.bgCard}, ${C.accentLight})`,
+            border: `1px solid ${C.border}`,
+            borderRadius: '24px',
+            padding: '48px',
+            boxShadow: '0 24px 70px rgba(26,26,24,0.06)',
+          }}>
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.accent, marginBottom: '14px' }}>
+                Our Mission
+              </p>
+              <h2 style={{ fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 900, letterSpacing: '-0.025em', lineHeight: 1.08, color: C.text }}>
+                Better studying, less friction.
+              </h2>
+            </div>
+            <p style={{ fontSize: 'clamp(18px, 2.2vw, 24px)', color: C.text, lineHeight: 1.55, fontWeight: 650, letterSpacing: '-0.01em' }}>
+              At Synapic, we want you to have the best studying experience possible. The future is here, with AI, becoming a straight-A student has never been easier.
+            </p>
+          </div>
+        </div>
+      </ScrollReveal>
+
+      {/* Testimonials section */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 40px 120px' }}>
+        <ScrollReveal>
+          <div style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto 48px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.accent, marginBottom: '14px' }}>
+              Testimonials
+            </p>
+            <h2 style={{ fontSize: 'clamp(34px, 5vw, 56px)', fontWeight: 900, letterSpacing: '-0.03em', color: C.text, lineHeight: 1.08, marginBottom: '18px' }}>
+              Loved by students
+            </h2>
+            <p style={{ fontSize: '17px', color: C.textMuted, lineHeight: 1.7 }}>
+              Don't just take our word for it. Here's what the community is saying.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          {testimonials.map((t, i) => (
+            <ScrollReveal key={t.name} delay={i * 0.08}>
+              <motion.div
+                whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(0,0,0,0.08)' }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  height: '100%',
+                  background: C.bgCard,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: '20px',
+                  padding: '30px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '28px',
+                }}>
+                <div>
+                  <p aria-label="5 out of 5 stars" style={{ color: C.warning, fontSize: '18px', letterSpacing: '0.08em', marginBottom: '18px' }}>
+                    ★★★★★
+                  </p>
+                  <p style={{ fontSize: '16px', color: C.text, lineHeight: 1.7, fontWeight: 600 }}>
+                    "{t.quote}"
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    background: C.accentGrad,
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    fontWeight: 900,
+                    letterSpacing: '0.04em',
+                    boxShadow: `0 10px 28px ${C.accent}30`,
+                    flex: '0 0 auto',
+                  }}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '15px', fontWeight: 800, color: C.text, marginBottom: '3px' }}>
+                      {t.name}
+                    </p>
+                    <p style={{ fontSize: '13px', color: C.textMuted }}>
+                      {t.role}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </div>
+
       <ScrollReveal>
         <div style={{ padding: '140px 40px', textAlign: 'center' }}>
           <h2 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 900, letterSpacing: '-0.03em', color: C.text, marginBottom: '24px', lineHeight: 1.08 }}>
@@ -647,6 +799,19 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
             No account required. Paste your notes and generate your first deck in under 10 seconds.
           </p>
           <motion.button onClick={onEnter}
+            animate={{
+              scale: [1, 1.07, 1],
+              boxShadow: [
+                `0 8px 32px ${C.accent}40`,
+                `0 22px 70px ${C.accent}75`,
+                `0 8px 32px ${C.accent}40`,
+              ],
+            }}
+            transition={{
+              duration: 1.35,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
             whileHover={{ scale: 1.04, boxShadow: `0 16px 48px ${C.accent}50` }}
             whileTap={{ scale: 0.97 }}
             style={{
@@ -797,6 +962,7 @@ export default function App() {
   const [savedDecks, setSavedDecks] = useState([])
   const [decksLoading, setDecksLoading] = useState(false)
   const [deckStats, setDeckStats] = useState({ totalCards: 0 })
+  const [studyStreak, setStudyStreak] = useState({ count: 0, lastStudiedDate: null })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
 
   const [guestGenerations, setGuestGenerations] = useState(() => {
@@ -845,6 +1011,48 @@ export default function App() {
   }
 
   // ── Generate ──────────────────────────────────────────────
+  const getStudyStreakStorageKey = useCallback(() => {
+    return user ? `synapic_study_streak_${user.id}` : null
+  }, [user])
+
+  useEffect(() => {
+    const storageKey = getStudyStreakStorageKey()
+    if (!storageKey) {
+      setStudyStreak({ count: 0, lastStudiedDate: null })
+      return
+    }
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
+      const today = getLocalDateKey()
+      const hasExpired = saved.lastStudiedDate && daysBetweenDateKeys(saved.lastStudiedDate, today) > 1
+      setStudyStreak({
+        count: hasExpired ? 0 : saved.count || 0,
+        lastStudiedDate: saved.lastStudiedDate || null,
+      })
+    } catch {
+      setStudyStreak({ count: 0, lastStudiedDate: null })
+    }
+  }, [getStudyStreakStorageKey])
+
+  const recordStudySession = useCallback(() => {
+    const storageKey = getStudyStreakStorageKey()
+    if (!storageKey) return
+
+    const today = getLocalDateKey()
+    setStudyStreak(prev => {
+      if (prev.lastStudiedDate === today) return prev
+
+      const gap = daysBetweenDateKeys(prev.lastStudiedDate, today)
+      const next = {
+        count: gap === 1 ? prev.count + 1 : 1,
+        lastStudiedDate: today,
+      }
+      localStorage.setItem(storageKey, JSON.stringify(next))
+      return next
+    })
+  }, [getStudyStreakStorageKey])
+
   const generate = async () => {
     if (!notes.trim()) return
 
@@ -1213,7 +1421,10 @@ export default function App() {
                     <div className="flex items-center gap-2 p-1 rounded-full"
                       style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
                       {['grid', 'study'].map(m => (
-                        <button key={m} onClick={() => setStudyMode(m)}
+                        <button key={m} onClick={() => {
+                          if (m === 'study') recordStudySession()
+                          setStudyMode(m)
+                        }}
                           className="px-4 py-2 rounded-full text-sm font-semibold capitalize transition-all relative"
                           style={studyMode === m
                             ? { background: C.accentGrad, color: 'white' }
@@ -1670,7 +1881,11 @@ export default function App() {
                       style={{ background: stat.color }}>
                       <p className="text-xs font-semibold uppercase tracking-widest mb-2"
                         style={{ color: 'rgba(255,255,255,0.7)' }}>{stat.label}</p>
-                      <p className="text-2xl font-black text-white">{stat.value}</p>
+                      <p className="text-2xl font-black text-white">
+                        {stat.label === 'Study Streak'
+                          ? (studyStreak.count > 0 ? `${studyStreak.count} day${studyStreak.count === 1 ? '' : 's'}` : 'Start today')
+                          : stat.value}
+                      </p>
                     </motion.div>
                   ))}
                 </motion.div>
@@ -1720,6 +1935,7 @@ export default function App() {
                             setFlipped({})
                             setCurrentCard(0)
                             setStudyMode('grid')
+                            recordStudySession()
                             setTab('flashcards')
                             setToast(`▶ Loaded "${deck.title}"`)
                           }}

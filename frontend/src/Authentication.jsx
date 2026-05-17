@@ -228,7 +228,7 @@ export default function Authentication({ onLogin, onBack, initialMode = 'signin'
 
       {/* Footer */}
       <p className="text-center text-xs mt-6" style={{ color: C.textLight }}>
-        © 2024 Synapic. Premium Scholarly Tools.
+        © 2026 Synapic. Premium Scholarly Tools.
       </p>
     </div>
   )
