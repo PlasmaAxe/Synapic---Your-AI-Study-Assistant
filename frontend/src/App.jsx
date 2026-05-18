@@ -44,6 +44,12 @@ const daysBetweenDateKeys = (fromKey, toKey) => {
   return Math.round((to - from) / 86400000)
 }
 
+const makeDefaultDeckTitle = (text) => {
+  const trimmed = text.trim()
+  if (!trimmed) return 'Untitled Deck'
+  return trimmed.slice(0, 50) + (trimmed.length > 50 ? '...' : '')
+}
+
 // ── Animation variants ───────────────────────────────────────
 // These are reusable animation configs we pass to Framer Motion
 const fadeUp = {
@@ -962,6 +968,7 @@ export default function App() {
   const [savedDecks, setSavedDecks] = useState([])
   const [decksLoading, setDecksLoading] = useState(false)
   const [deckStats, setDeckStats] = useState({ totalCards: 0 })
+  const [deckName, setDeckName] = useState('')
   const [studyStreak, setStudyStreak] = useState({ count: 0, lastStudiedDate: null })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
 
@@ -1080,6 +1087,7 @@ export default function App() {
       if (tab === 'flashcards') {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-flashcards`, { text: notes })
         setFlashcards(res.data.flashcards)
+        setDeckName(makeDefaultDeckTitle(notes))
         setToast(`✨ Generated ${res.data.flashcards.length} flashcards`)
       } else if (tab === 'quizzes') {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-quiz`, { text: notes })
@@ -1113,7 +1121,8 @@ export default function App() {
   const saveDeck = async () => {
     if (!user || flashcards.length === 0) return
     try {
-      const title = notes.trim().slice(0, 50) + (notes.length > 50 ? '...' : '')
+      const customTitle = deckName.trim()
+      const title = customTitle || makeDefaultDeckTitle(notes)
       const { data: deck, error: deckError } = await supabase
         .from('decks').insert({ user_id: user.id, title }).select().single()
       if (deckError) throw deckError
@@ -1122,7 +1131,9 @@ export default function App() {
       }))
       const { error: cardsError } = await supabase.from('flashcards').insert(cardRows)
       if (cardsError) throw cardsError
-      setToast('✅ Deck saved!')
+      setSavedDecks(prev => [deck, ...prev.filter(savedDeck => savedDeck.id !== deck.id)])
+      setDeckStats(prev => ({ totalCards: prev.totalCards + flashcards.length }))
+      setToast(`✅ "${title}" saved!`)
     } catch {
       setToast('Failed to save deck. Please try again.')
     }
@@ -1402,18 +1413,33 @@ export default function App() {
               {!loading && flashcards.length > 0 && (
                 <div>
                   {/* Controls row */}
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div className="flex flex-wrap items-center gap-3">
                       <p className="text-sm font-semibold" style={{ color: C.textMuted }}>
                         {flashcards.length} cards generated
                       </p>
                       {user && (
-                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                          onClick={saveDeck}
-                          className="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
-                          style={{ background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30` }}>
-                          Save Deck
-                        </motion.button>
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={deckName}
+                            onChange={e => setDeckName(e.target.value)}
+                            maxLength={80}
+                            aria-label="Saved deck name"
+                            placeholder="Deck name"
+                            className="w-44 px-3 py-1.5 rounded-full text-xs font-semibold outline-none transition-all"
+                            style={{
+                              background: C.bgCard,
+                              color: C.text,
+                              border: `1px solid ${C.border}`,
+                            }}
+                          />
+                          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={saveDeck}
+                            className="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
+                            style={{ background: C.accentLight, color: C.accent, border: `1px solid ${C.accent}30` }}>
+                            Save Deck
+                          </motion.button>
+                        </div>
                       )}
                     </div>
 
@@ -1551,14 +1577,6 @@ export default function App() {
                               style={{ color: C.text }}>
                               {flashcards[currentCard].question}
                             </p>
-                            <div className="flex items-center gap-2 text-xs"
-                              style={{ color: C.textLight }}>
-                              <span>🖱️ Click to flip</span>
-                              <span>·</span>
-                              <span>Space</span>
-                              <span>·</span>
-                              <span>← → to navigate</span>
-                            </div>
                           </div>
                           {/* Back */}
                           <div
@@ -1589,6 +1607,15 @@ export default function App() {
                       </div>
 
                       {/* Previous / Next — matches Image 3 */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 text-xs mb-4"
+                        style={{ color: C.textLight }}>
+                        <span>Click to flip</span>
+                        <span>·</span>
+                        <span>Space</span>
+                        <span>·</span>
+                        <span>← → to navigate</span>
+                      </div>
+
                       <div className="flex gap-3">
                         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                           onClick={() => { setFlipped({}); setCurrentCard(i => Math.max(i - 1, 0)) }}
