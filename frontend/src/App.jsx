@@ -6,7 +6,7 @@ import { supabase } from './supabase'
 import Authentication from './Authentication'
 
 // ── Design tokens ────────────────────────────────────────────
-const C = {
+const LIGHT_THEME = {
   bg: '#F7F5F0',
   bgCard: '#FFFFFF',
   bgCardHover: '#F0EDE8',
@@ -24,11 +24,41 @@ const C = {
   success: '#38A169',
   successLight: '#F0FFF4',
   warning: '#D69E2E',
+  navBg: 'rgba(247,245,240,0.85)',
 }
 
+const DARK_THEME = {
+  bg: '#111111',
+  bgCard: '#1B1B19',
+  bgCardHover: '#252520',
+  border: '#34342E',
+  borderStrong: '#4A4A42',
+  text: '#F6F3EA',
+  textMuted: '#B9B4A8',
+  textLight: '#858176',
+  accent: '#16B892',
+  accentLight: '#12382F',
+  accentDark: '#6DE0C2',
+  accentGrad: 'linear-gradient(135deg, #16B892, #0D9373)',
+  danger: '#F87171',
+  dangerLight: '#351A1A',
+  success: '#4ADE80',
+  successLight: '#15351F',
+  warning: '#FBBF24',
+  navBg: 'rgba(17,17,17,0.88)',
+}
+
+let C = LIGHT_THEME
 
 const MAX_INPUT_CHARS = 12000
 const FREE_GENERATION_LIMIT = 5
+const APP_TABS = [
+  { id: 'flashcards', label: 'Flashcards' },
+  { id: 'quizzes', label: 'Quizzes' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'decks', label: 'My Decks' },
+  { id: 'settings', label: 'Settings' },
+]
 
 const getLocalDateKey = (date = new Date()) => {
   const year = date.getFullYear()
@@ -160,7 +190,7 @@ function ScrollReveal({ children, delay = 0 }) {
 
 // ── Particle canvas ────────────────────────────────────────────
 // Draws a field of floating dots connected by lines when close together
-// Subtly reacts to mouse position — like a neural network / constellation
+// Subtly reacts to mouse position - like a neural network / constellation
 function ParticleCanvas() {
   const canvasRef = useRef(null)
   const mouse = useRef({ x: -1000, y: -1000 })
@@ -187,7 +217,7 @@ function ParticleCanvas() {
         this.alpha = Math.random() * 0.5 + 0.18
       }
       update() {
-        // Subtle mouse attraction — pulls particles gently toward cursor
+        // Subtle mouse attraction - pulls particles gently toward cursor
         const dx = mouse.current.x - this.x
         const dy = mouse.current.y - this.y
         const dist = Math.sqrt(dx * dx + dy * dy)
@@ -216,7 +246,7 @@ function ParticleCanvas() {
     }
 
     resize()
-    // Create 80 particles — enough for density without hurting performance
+    // Create 80 particles - enough for density without hurting performance
     particles = Array.from({ length: 95 }, () => new Particle())
     window.addEventListener('resize', resize)
 
@@ -336,7 +366,7 @@ function MockCard() {
 }
 
 // ── Landing ──────────────────────────────────────────────────
-function Landing({ onEnter, onAuth, user, onSignOut }) {
+function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
   const scrollY = useMotionValue(0)
   const heroRef = useRef(null)
   // Scramble triggers on mount
@@ -400,60 +430,63 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
       <CursorGlow />
 
       {/* ── Nav ───────────────────────────────────────── */}
-      <nav style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 40px', height: '64px',
-        position: 'sticky', top: 0, zIndex: 40,
-        background: 'rgba(247,245,240,0.80)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${C.border}`,
-      }}>
-        <img src={synapicLogo} alt="Synapic" style={{ height: '56px', width: 'auto', objectFit: 'contain' }} />
+      <nav className="flex items-center justify-between px-8 py-3 sticky top-0 z-40"
+        style={{
+          background: C.navBg,
+          backdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${C.border}`,
+        }}>
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="transition-opacity hover:opacity-70">
+          <img src={synapicLogo} alt="Synapic" className="h-16 w-auto object-contain" />
+        </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          {['Flashcards', 'Quizzes', 'Summaries'].map(item => (
-            <button key={item} onClick={onEnter} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '14px', fontWeight: 500, color: C.textMuted,
-              letterSpacing: '0.01em', transition: 'color 0.2s',
-            }}
-              onMouseEnter={e => e.target.style.color = C.text}
-              onMouseLeave={e => e.target.style.color = C.textMuted}>
-              {item}
-            </button>
+        <div className="flex gap-1 p-1 rounded-full"
+          style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+          {APP_TABS.map(t => (
+            <motion.button key={t.id} onClick={() => onSelectTab(t.id)}
+              className="px-4 py-2 rounded-full text-sm font-semibold transition-all relative"
+              style={activeTab === t.id
+                ? { color: 'white' }
+                : { color: C.textMuted, background: 'transparent' }
+              }>
+              {activeTab === t.id && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: C.accentGrad }}
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                />
+              )}
+              <span className="relative z-10">{t.label}</span>
+            </motion.button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="flex items-center gap-3">
           {user ? (
             <>
-              <span style={{ fontSize: '13px', color: C.textMuted }}>{user.email.split('@')[0]}</span>
-              <button onClick={onSignOut} style={{
-                padding: '8px 20px', borderRadius: '100px',
-                border: `1px solid ${C.border}`, background: 'transparent',
-                fontSize: '13px', fontWeight: 600, color: C.textMuted, cursor: 'pointer',
-              }}>
-                Sign out
+              <span className="text-sm hidden md:block" style={{ color: C.textMuted }}>
+                {user.email.split('@')[0]}
+              </span>
+              <button onClick={onSignOut}
+                className="px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:opacity-80"
+                style={{ color: C.textMuted, borderColor: C.border, background: C.bg }}>
+                Sign Out
               </button>
             </>
           ) : (
             <>
-              <button onClick={() => onAuth('signin')} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '14px', fontWeight: 500, color: C.textMuted,
-              }}>
-                Sign in
+              <button onClick={() => onAuth('signin')}
+                className="px-4 py-2 rounded-full text-sm font-semibold border transition-all hover:opacity-80"
+                style={{ color: C.textMuted, borderColor: C.border, background: C.bg }}>
+                Sign In
               </button>
-              <motion.button onClick={onEnter}
-                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                style={{
-                  padding: '10px 24px', borderRadius: '100px',
-                  background: C.text, border: 'none',
-                  fontSize: '13px', fontWeight: 700, color: 'white', cursor: 'pointer',
-                  letterSpacing: '0.01em',
-                }}>
-                Get Started Free
-              </motion.button>
+              <button onClick={() => onAuth('signup')}
+                className="px-4 py-2 rounded-full text-sm font-bold text-white transition-all hover:opacity-90"
+                style={{ background: C.accentGrad, boxShadow: `0 4px 16px ${C.accent}30` }}>
+                Sign Up Free
+              </button>
             </>
           )}
         </div>
@@ -476,7 +509,7 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
           background: `radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, ${C.bg} 100%)`,
         }} />
 
-        {/* Content — moves up on scroll (parallax) */}
+        {/* Content - moves up on scroll (parallax) */}
         <motion.div style={{ y: heroY, opacity: heroOpacity, position: 'relative', zIndex: 3 }}
           className="flex flex-col items-center text-center">
 
@@ -559,7 +592,7 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
               marginBottom: '48px', letterSpacing: '0.01em',
             }}>
             Paste your lecture notes and instantly get flashcards, quizzes,
-            and summaries — all powered by AI.
+            and summaries - all powered by AI.
           </motion.p>
 
           {/* CTA buttons */}
@@ -757,7 +790,7 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
                 }}>
                 <div>
                   <p aria-label="5 out of 5 stars" style={{ color: C.warning, fontSize: '18px', letterSpacing: '0.08em', marginBottom: '18px' }}>
-                    ★★★★★
+                    ⭐⭐⭐⭐⭐
                   </p>
                   <p style={{ fontSize: '16px', color: C.text, lineHeight: 1.7, fontWeight: 600 }}>
                     "{t.quote}"
@@ -840,7 +873,7 @@ function Landing({ onEnter, onAuth, user, onSignOut }) {
       }}>
         <img src={synapicLogo} alt="Synapic" style={{ height: '40px', width: 'auto', objectFit: 'contain', opacity: 0.6 }} />
         <p style={{ fontSize: '13px', color: C.textLight }}>
-          Built by Shyam — University of Auckland
+          Built by Shyam - University of Auckland
         </p>
       </div>
 
@@ -870,7 +903,7 @@ function Toast({ message, onClose }) {
       className="fixed bottom-6 right-6 px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium z-50 flex items-center gap-3"
       style={{ background: C.text, color: 'white', maxWidth: '320px' }}>
       <span className="flex-1">{message}</span>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg leading-none">×</button>
+        <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg leading-none">x</button>
     </motion.div>
   )
 }
@@ -893,7 +926,7 @@ function EmptyState({ icon, title, subtitle }) {
     <motion.div {...fadeUp}
       className="rounded-2xl p-16 text-center"
       style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
-      <p className="text-5xl mb-4">{icon}</p>
+      {icon && <p className="text-5xl mb-4">{icon}</p>}
       <p className="font-bold text-lg mb-2" style={{ color: C.text }}>{title}</p>
       <p className="text-sm" style={{ color: C.textMuted }}>{subtitle}</p>
     </motion.div>
@@ -918,16 +951,19 @@ function UpgradePrompt({ onSignUp, onClose }) {
         className="rounded-3xl p-8 max-w-md w-full text-center shadow-2xl"
         style={{ background: C.bgCard, border: `1px solid ${C.border}` }}
         onClick={e => e.stopPropagation()}>
-        <div className="text-5xl mb-4">🔒</div>
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 text-sm font-black"
+          style={{ background: C.accentLight, color: C.accentDark }}>
+          PRO
+        </div>
         <h2 className="text-2xl font-black mb-2" style={{ color: C.text }}>
           You've used your {FREE_GENERATION_LIMIT} free generations
         </h2>
         <p className="text-sm mb-6 leading-relaxed" style={{ color: C.textMuted }}>
-          Create a free account to get unlimited flashcards, quizzes, and summaries — plus save your decks forever.
+          Create a free account to get unlimited flashcards, quizzes, and summaries, plus save your decks forever.
         </p>
         <div className="rounded-2xl p-4 mb-6 text-left space-y-2"
           style={{ background: C.accentLight, border: `1px solid ${C.accent}30` }}>
-          {['✅ Unlimited AI generations', '✅ Save and revisit your decks', '✅ Free forever — no credit card'].map(item => (
+          {['Unlimited AI generations', 'Save and revisit your decks', 'Free forever - no credit card'].map(item => (
             <p key={item} className="text-sm font-medium" style={{ color: C.accentDark }}>{item}</p>
           ))}
         </div>
@@ -936,7 +972,7 @@ function UpgradePrompt({ onSignUp, onClose }) {
           whileTap={{ scale: 0.97 }}
           className="w-full py-3 rounded-full font-bold text-white text-sm mb-3"
           style={{ background: C.accentGrad, boxShadow: `0 8px 24px ${C.accent}40` }}>
-          Create Free Account →
+          Create Free Account
         </motion.button>
         <button onClick={onClose} className="text-xs hover:opacity-70 transition-opacity"
           style={{ color: C.textLight }}>
@@ -954,6 +990,9 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState('flashcards')
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('synapic_dark_mode') === 'true'
+  })
   const [notes, setNotes] = useState('')
   const [flashcards, setFlashcards] = useState([])
   const [quiz, setQuiz] = useState(null)
@@ -972,11 +1011,19 @@ export default function App() {
   const [studyStreak, setStudyStreak] = useState({ count: 0, lastStudiedDate: null })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
 
+  C = darkMode ? DARK_THEME : LIGHT_THEME
+
   const [guestGenerations, setGuestGenerations] = useState(() => {
     const saved = localStorage.getItem('synapic_guest_generations')
     const parsed = saved ? parseInt(saved, 10) : 0
     return Number.isNaN(parsed) ? 0 : parsed
   })
+
+  useEffect(() => {
+    localStorage.setItem('synapic_dark_mode', darkMode.toString())
+    document.body.style.backgroundColor = C.bg
+    document.body.style.color = C.text
+  }, [darkMode])
 
   // ── Auth listener ─────────────────────────────────────────
   useEffect(() => {
@@ -1088,15 +1135,15 @@ export default function App() {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-flashcards`, { text: notes })
         setFlashcards(res.data.flashcards)
         setDeckName(makeDefaultDeckTitle(notes))
-        setToast(`✨ Generated ${res.data.flashcards.length} flashcards`)
+        setToast(`Generated ${res.data.flashcards.length} flashcards`)
       } else if (tab === 'quizzes') {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-quiz`, { text: notes })
         setQuiz(res.data.quiz)
-        setToast(`✨ Generated ${res.data.quiz.length} questions`)
+        setToast(`Generated ${res.data.quiz.length} questions`)
       } else if (tab === 'summary') {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/generate-summary`, { text: notes })
         setSummary(res.data)
-        setToast('✨ Summary generated')
+        setToast('Summary generated')
       }
 
       if (!user) incrementGuestGenerations()
@@ -1107,7 +1154,7 @@ export default function App() {
       if (status === 400 && detail?.error === 'text_too_long') {
         setToast(`Text too long. Max ${detail.max_characters.toLocaleString()} characters.`)
       } else if (status === 429) {
-        setToast('Rate limit reached — wait ~60 seconds and try again.')
+        setToast('Rate limit reached - wait ~60 seconds and try again.')
       } else {
         setToast('Something went wrong. Is the backend running?')
       }
@@ -1133,7 +1180,7 @@ export default function App() {
       if (cardsError) throw cardsError
       setSavedDecks(prev => [deck, ...prev.filter(savedDeck => savedDeck.id !== deck.id)])
       setDeckStats(prev => ({ totalCards: prev.totalCards + flashcards.length }))
-      setToast(`✅ "${title}" saved!`)
+      setToast(`"${title}" saved!`)
     } catch {
       setToast('Failed to save deck. Please try again.')
     }
@@ -1184,6 +1231,15 @@ export default function App() {
   if (page === 'landing') return (
     <Landing
       onEnter={() => setPage('app')}
+      activeTab={tab}
+      onSelectTab={(nextTab) => {
+        if (nextTab === 'decks' && !user) {
+          openAuth('signin')
+          return
+        }
+        setTab(nextTab)
+        setPage('app')
+      }}
       onAuth={openAuth}
       user={user}
       onSignOut={() => supabase.auth.signOut()}
@@ -1197,13 +1253,6 @@ export default function App() {
       initialMode={authMode}
     />
   )
-
-  const tabs = [
-    { id: 'flashcards', label: 'Flashcards' },
-    { id: 'quizzes', label: 'Quizzes' },
-    { id: 'summary', label: 'Summary' },
-    { id: 'decks', label: 'My Decks' },
-  ]
 
   const headings = {
     flashcards: 'Create Study Materials',
@@ -1244,7 +1293,7 @@ export default function App() {
       {/* ── Nav ──────────────────────────────────────────── */}
       <nav className="flex items-center justify-between px-8 py-3 sticky top-0 z-40"
         style={{
-          background: 'rgba(247,245,240,0.85)',
+          background: C.navBg,
           backdropFilter: 'blur(16px)',
           borderBottom: `1px solid ${C.border}`
         }}>
@@ -1252,10 +1301,10 @@ export default function App() {
           <img src={synapicLogo} alt="Synapic" className="h-16 w-auto object-contain" />
         </button>
 
-        {/* Tab switcher — pill style matching Image 2 */}
+        {/* Tab switcher - pill style matching Image 2 */}
         <div className="flex gap-1 p-1 rounded-full"
           style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
-          {tabs.map(t => (
+          {APP_TABS.map(t => (
             <motion.button key={t.id} onClick={() => t.id === 'decks' && !user ? openAuth('signin') : setTab(t.id)}
               className="px-4 py-2 rounded-full text-sm font-semibold transition-all relative"
               style={tab === t.id
@@ -1309,9 +1358,9 @@ export default function App() {
       {/* ── Main content ─────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-6 py-10">
 
-        {/* Input section — only show on non-decks tabs */}
+        {/* Input section - only show on non-decks tabs */}
         <AnimatePresence mode="wait">
-          {tab !== 'decks' && (
+          {!['decks', 'settings'].includes(tab) && (
             <motion.div key="input-section" {...fadeUp}
               className="rounded-3xl p-8 mb-8 shadow-sm"
               style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
@@ -1324,7 +1373,7 @@ export default function App() {
                 {subheadings[tab]}
               </p>
 
-              {/* Guest usage banner — matches Image 2 pill badge */}
+              {/* Guest usage banner - matches Image 2 pill badge */}
               {!user && (
                 <motion.div
                   animate={{ scale: [1, 1.01, 1] }}
@@ -1336,9 +1385,8 @@ export default function App() {
                     border: `1px solid ${guestGenerations >= FREE_GENERATION_LIMIT ? C.danger : C.accent}30`
                   }}
                   onClick={() => openAuth('signup')}>
-                  <span>{guestGenerations >= FREE_GENERATION_LIMIT ? '🔒' : '✨'}</span>
                   {guestGenerations >= FREE_GENERATION_LIMIT
-                    ? 'No generations left — Sign up free unlimited access!'
+                    ? 'No generations left - Sign up free unlimited access!'
                     : `${FREE_GENERATION_LIMIT - guestGenerations} free generation${FREE_GENERATION_LIMIT - guestGenerations === 1 ? '' : 's'} remaining`
                   }
                 </motion.div>
@@ -1368,7 +1416,7 @@ export default function App() {
                       fontWeight: notes.length > MAX_INPUT_CHARS ? '600' : 'normal'
                     }}>
                     {notes.length > 0
-                      ? `${notes.length.toLocaleString()} / ${MAX_INPUT_CHARS.toLocaleString()} characters${notes.length > MAX_INPUT_CHARS ? ' — too long' : ''}`
+                      ? `${notes.length.toLocaleString()} / ${MAX_INPUT_CHARS.toLocaleString()} characters${notes.length > MAX_INPUT_CHARS ? ' - too long' : ''}`
                       : 'Supports plain text'}
                   </p>
                 </div>
@@ -1386,10 +1434,57 @@ export default function App() {
                       Generating...
                     </>
                   ) : (
-                    <>⚡ {btnLabels[tab]}</>
+                    <>{btnLabels[tab]}</>
                   )}
                 </motion.button>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Settings tab */}
+        <AnimatePresence mode="wait">
+          {tab === 'settings' && (
+            <motion.div key="settings" {...fadeUp}>
+              <div className="mb-6">
+                <h2 className="text-3xl font-black mb-1" style={{ color: C.text }}>Settings</h2>
+                <p className="text-sm" style={{ color: C.textMuted }}>Tune Synapic to your study style.</p>
+              </div>
+
+              <motion.div
+                variants={cardVariant}
+                initial="initial"
+                animate="animate"
+                className="rounded-2xl p-6 flex items-center justify-between gap-6"
+                style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
+                <div>
+                  <p className="font-bold text-base" style={{ color: C.text }}>Dark mode</p>
+                  <p className="text-sm mt-1" style={{ color: C.textMuted }}>
+                    Switch to a darker interface for late-night study sessions.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={darkMode}
+                  onClick={() => setDarkMode(value => !value)}
+                  className="relative flex h-8 w-14 flex-shrink-0 items-center rounded-full p-1 transition-all"
+                  style={{
+                    background: darkMode ? C.accentGrad : C.bg,
+                    border: `1px solid ${darkMode ? C.accent : C.borderStrong}`,
+                  }}>
+                  <motion.span
+                    layout
+                    className="block h-6 w-6 rounded-full shadow-sm"
+                    style={{
+                      background: darkMode ? '#FFFFFF' : C.bgCard,
+                      x: darkMode ? 22 : 0,
+                    }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                  />
+                </button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1406,7 +1501,7 @@ export default function App() {
               )}
 
               {!loading && flashcards.length === 0 && (
-                <EmptyState icon="🃏" title="Ready to Make Flashcards?"
+                <EmptyState icon="" title="Ready to Make Flashcards?"
                   subtitle="Paste your notes above and hit generate." />
               )}
 
@@ -1443,7 +1538,7 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Grid / Study mode toggle — matches Image 3 toggle */}
+                    {/* Grid / Study mode toggle - matches Image 3 toggle */}
                     <div className="flex items-center gap-2 p-1 rounded-full"
                       style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
                       {['grid', 'study'].map(m => (
@@ -1526,7 +1621,7 @@ export default function App() {
                     </motion.div>
                   )}
 
-                  {/* Study mode — matches Image 3 */}
+                  {/* Study mode - matches Image 3 */}
                   {studyMode === 'study' && (
                     <motion.div {...fadeUp} className="flex flex-col items-center">
 
@@ -1572,7 +1667,6 @@ export default function App() {
                               padding: '48px',
                               textAlign: 'center',
                             }}>
-                            <span className="text-3xl mb-4">🧠</span>
                             <p className="text-xl font-bold leading-relaxed mb-6"
                               style={{ color: C.text }}>
                               {flashcards[currentCard].question}
@@ -1606,14 +1700,14 @@ export default function App() {
                         </motion.div>
                       </div>
 
-                      {/* Previous / Next — matches Image 3 */}
+                      {/* Previous / Next - matches Image 3 */}
                       <div className="flex flex-wrap items-center justify-center gap-2 text-xs mb-4"
                         style={{ color: C.textLight }}>
                         <span>Click to flip</span>
-                        <span>·</span>
+                        <span>/</span>
                         <span>Space</span>
-                        <span>·</span>
-                        <span>← → to navigate</span>
+                        <span>/</span>
+                        <span>Arrow keys to navigate</span>
                       </div>
 
                       <div className="flex gap-3">
@@ -1622,14 +1716,14 @@ export default function App() {
                           disabled={currentCard === 0}
                           className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-30"
                           style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
-                          ← Previous
+                          Previous
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                           onClick={() => { setFlipped({}); setCurrentCard(i => Math.min(i + 1, flashcards.length - 1)) }}
                           disabled={currentCard === flashcards.length - 1}
                           className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-white transition-all disabled:opacity-30"
                           style={{ background: C.accentGrad }}>
-                          Next →
+                          Next
                         </motion.button>
                       </div>
                     </motion.div>
@@ -1651,13 +1745,13 @@ export default function App() {
               )}
 
               {!loading && !quiz && (
-                <EmptyState icon="📝" title="Ready to Quiz Yourself?"
+                <EmptyState icon="" title="Ready to Quiz Yourself?"
                   subtitle="Paste your notes above and hit generate." />
               )}
 
               {!loading && quiz && (
                 <div className="space-y-5">
-                  {/* Score badge — top right like Image 4 */}
+                  {/* Score badge - top right like Image 4 */}
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold" style={{ color: C.textMuted }}>
                       {quiz.length} questions
@@ -1668,7 +1762,7 @@ export default function App() {
                         animate={{ scale: 1, opacity: 1 }}
                         className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black"
                         style={{ background: C.accentGrad, color: 'white' }}>
-                        ⭐ {Object.entries(quizAnswers).filter(([i, ans]) => ans === quiz[i].correct).length}/{quiz.length}
+                        Score {Object.entries(quizAnswers).filter(([i, ans]) => ans === quiz[i].correct).length}/{quiz.length}
                       </motion.div>
                     )}
                   </div>
@@ -1683,7 +1777,7 @@ export default function App() {
                         className="rounded-2xl p-6"
                         style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
 
-                        {/* Question header with correct/incorrect badge — matches Image 4 */}
+                        {/* Question header with correct/incorrect badge - matches Image 4 */}
                         <div className="flex items-start justify-between mb-4 gap-4">
                           <p className="font-bold text-base leading-relaxed"
                             style={{ color: C.text }}>
@@ -1695,7 +1789,7 @@ export default function App() {
                                 background: isCorrect ? C.successLight : C.dangerLight,
                                 color: isCorrect ? C.success : C.danger,
                               }}>
-                              {isCorrect ? '✅ Correct' : '❌ Incorrect'}
+                              {isCorrect ? 'Correct' : 'Incorrect'}
                             </span>
                           )}
                           {!quizSubmitted && !userAnswer && (
@@ -1706,7 +1800,7 @@ export default function App() {
                           )}
                         </div>
 
-                        {/* Options in 2x2 grid — matches Image 4 */}
+                        {/* Options in 2x2 grid - matches Image 4 */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {q.options.map(opt => {
                             const selected = userAnswer === opt.label
@@ -1736,14 +1830,14 @@ export default function App() {
                                   <span className="font-black mr-2">{opt.label}.</span>
                                   {opt.text}
                                 </span>
-                                {quizSubmitted && isOptCorrect && <span>✓</span>}
-                                {quizSubmitted && selected && !isOptCorrect && <span>✗</span>}
+                                {quizSubmitted && isOptCorrect && <span>Correct</span>}
+                                {quizSubmitted && selected && !isOptCorrect && <span>Incorrect</span>}
                               </motion.button>
                             )
                           })}
                         </div>
 
-                        {/* Explanation — matches Image 4 info box */}
+                        {/* Explanation - matches Image 4 info box */}
                         <AnimatePresence>
                           {quizSubmitted && (
                             <motion.div
@@ -1751,7 +1845,7 @@ export default function App() {
                               animate={{ opacity: 1, height: 'auto' }}
                               className="mt-4 px-4 py-3 rounded-xl text-sm leading-relaxed flex items-start gap-2"
                               style={{ background: C.accentLight, color: C.accentDark }}>
-                              <span className="flex-shrink-0">ℹ️</span>
+                              <span className="flex-shrink-0">Info</span>
                               <span>{q.explanation}</span>
                             </motion.div>
                           )}
@@ -1767,7 +1861,7 @@ export default function App() {
                       disabled={Object.keys(quizAnswers).length < quiz.length}
                       className="px-8 py-3 rounded-full font-bold text-white text-sm disabled:opacity-40"
                       style={{ background: C.accentGrad, boxShadow: `0 4px 16px ${C.accent}30` }}>
-                      Submit Quiz →
+                      Submit Quiz 
                     </motion.button>
                   )}
 
@@ -1793,7 +1887,7 @@ export default function App() {
               {loading && <SkeletonCard />}
 
               {!loading && !summary && (
-                <EmptyState icon="📄" title="Ready to Summarise?"
+                <EmptyState icon="" title="Ready to Summarise?"
                   subtitle="Paste your notes above and hit generate." />
               )}
 
@@ -1820,14 +1914,14 @@ export default function App() {
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                         style={{ background: C.accentLight }}>
-                        <span className="text-sm">📋</span>
+                        <span className="text-xs font-black">OV</span>
                       </div>
                       <p className="font-bold" style={{ color: C.text }}>Overview</p>
                     </div>
                     <p className="text-sm leading-relaxed" style={{ color: C.text }}>{summary.overview}</p>
                   </motion.div>
 
-                  {/* Key Points + Conclusion side by side — matches Image 5 */}
+                  {/* Key Points + Conclusion side by side - matches Image 5 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Key Points */}
                     <motion.div variants={cardVariant}
@@ -1836,7 +1930,7 @@ export default function App() {
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                           style={{ background: C.accentLight }}>
-                          <span className="text-sm">📝</span>
+                          <span className="text-xs font-black">KP</span>
                         </div>
                         <p className="font-bold" style={{ color: C.text }}>Key Points</p>
                       </div>
@@ -1860,7 +1954,7 @@ export default function App() {
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                           style={{ background: '#FEF3C7' }}>
-                          <span className="text-sm">✅</span>
+                          <span className="text-xs font-black">OK</span>
                         </div>
                         <p className="font-bold" style={{ color: C.text }}>Conclusion</p>
                       </div>
@@ -1868,13 +1962,13 @@ export default function App() {
                     </motion.div>
                   </div>
 
-                  {/* Ready to Quiz CTA — matches Image 5 bottom button */}
+                  {/* Ready to Quiz CTA - matches Image 5 bottom button */}
                   <motion.button variants={cardVariant}
                     whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                     onClick={() => setTab('quizzes')}
                     className="w-full py-4 rounded-2xl font-bold text-white text-base"
                     style={{ background: C.accentGrad, boxShadow: `0 4px 20px ${C.accent}30` }}>
-                    Ready to Quiz? →
+                    Ready to Quiz?
                   </motion.button>
                 </motion.div>
               )}
@@ -1893,7 +1987,7 @@ export default function App() {
                 <p className="text-sm" style={{ color: C.textMuted }}>Your saved study materials</p>
               </div>
 
-              {/* Stats row — matches Image 6 */}
+              {/* Stats row - matches Image 6 */}
               {!decksLoading && (
                 <motion.div
                   variants={staggerContainer} initial="initial" animate="animate"
@@ -1901,7 +1995,7 @@ export default function App() {
                   {[
                     { label: 'Active Decks', value: savedDecks.length, color: C.accentGrad },
                     { label: 'Total Cards', value: deckStats.totalCards, color: 'linear-gradient(135deg, #38B2AC, #2C7A7B)' },
-                    { label: 'Study Streak', value: '🔥 Keep it up!', color: 'linear-gradient(135deg, #C05621, #9C4221)' },
+                    { label: 'Study Streak', value: 'Keep it up!', color: 'linear-gradient(135deg, #C05621, #9C4221)' },
                   ].map((stat, i) => (
                     <motion.div key={stat.label} variants={cardVariant}
                       className="rounded-2xl p-5"
@@ -1925,7 +2019,7 @@ export default function App() {
               )}
 
               {!decksLoading && savedDecks.length === 0 && (
-                <EmptyState icon="📚" title="No saved decks yet"
+                <EmptyState icon="" title="No saved decks yet"
                   subtitle="Generate some flashcards and hit Save Deck to store them here." />
               )}
 
@@ -1939,15 +2033,15 @@ export default function App() {
                       className="rounded-2xl p-5 flex items-center justify-between"
                       style={{ background: C.bgCard, border: `1px solid ${C.border}` }}>
                       <div className="flex items-center gap-4">
-                        {/* Colored icon — matches Image 6 subject icons */}
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                          style={{ background: C.accentLight }}>
-                          🃏
+                        {/* Colored icon - matches Image 6 subject icons */}
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"
+                          style={{ background: C.accentLight, color: C.accent }}>
+                          DECK
                         </div>
                         <div>
                           <p className="font-bold text-sm" style={{ color: C.text }}>{deck.title}</p>
                           <p className="text-xs mt-0.5" style={{ color: C.textLight }}>
-                            🗓️ {new Date(deck.created_at).toLocaleDateString('en-NZ', {
+                            Created {new Date(deck.created_at).toLocaleDateString('en-NZ', {
                               day: 'numeric', month: 'short', year: 'numeric'
                             })}
                           </p>
@@ -1964,11 +2058,11 @@ export default function App() {
                             setStudyMode('grid')
                             recordStudySession()
                             setTab('flashcards')
-                            setToast(`▶ Loaded "${deck.title}"`)
+                            setToast(`Loaded "${deck.title}"`)
                           }}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold"
                           style={{ background: C.accentGrad, color: 'white' }}>
-                          ▶ Study
+                          Study
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                           onClick={async () => {
@@ -1978,7 +2072,7 @@ export default function App() {
                           }}
                           className="p-2 rounded-full text-sm transition-all hover:opacity-80"
                           style={{ background: C.dangerLight, color: C.danger }}>
-                          🗑️
+                          Delete
                         </motion.button>
                       </div>
                     </motion.div>
