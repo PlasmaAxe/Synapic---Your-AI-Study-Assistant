@@ -100,7 +100,7 @@ export default function Authentication({ onLogin, onBack, initialMode = 'signin'
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3"
             style={{ background: C.accentLight }}>
-            <span className="text-2xl">🧠</span>
+            <img src="/plainlogoSynapic.png" alt="" className="h-9 w-9 object-contain" />
           </div>
           <h1 className="text-xl font-black" style={{ color: C.text }}>Synapic</h1>
           <p className="text-xs mt-1" style={{ color: C.textMuted }}>Your premium academic workspace</p>
@@ -178,12 +178,17 @@ export default function Authentication({ onLogin, onBack, initialMode = 'signin'
                     onBlur={e => e.target.style.borderColor = C.border}
                   />
                   {/* Eye toggle */}
-                  <button type="button"
-                    onClick={() => setShowPassword(s => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-lg"
-                    style={{ color: C.textLight }}>
-                    {showPassword ? '🙈' : '👁️'}
-                  </button>
+                  <label 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs cursor-pointer"
+                    style={{ color: C.textLight }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={showPassword}
+                      onChange={e => setShowPassword(e.target.checked)}
+                    />
+                   Show
+                  </label>
                 </div>
               </div>
             </div>
