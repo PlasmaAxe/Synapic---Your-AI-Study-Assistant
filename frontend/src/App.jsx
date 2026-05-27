@@ -129,44 +129,12 @@ function CursorGlow() {
         width: '360px',
         height: '360px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(13,147,115,0.08) 0%, transparent 68%)',
+        background: 'radial-gradient(circle, rgba(13,147,115,0.04) 0%, transparent 64%)',
         pointerEvents: 'none',
         zIndex: 1,
       }}
     />
   )
-}
-
-// ── Text scramble hook ─────────────────────────────────────────
-// Letters randomly cycle through characters then resolve to the real text
-// This gives the "decoding" effect seen on premium tech landing pages
-function useTextScramble(text, trigger = true) {
-  const [display, setDisplay] = useState(text)
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-
-  useEffect(() => {
-    if (!trigger) return
-    let iteration = 0
-    const framesPerCharacter = 3
-    const totalFrames = text.length * framesPerCharacter // how long the scramble runs
-    const interval = setInterval(() => {
-      setDisplay(
-        text.split('').map((char, i) => {
-          if (char === ' ') return ' '
-          if (i < iteration / framesPerCharacter) return text[i] // this character has resolved
-          return chars[Math.floor(Math.random() * chars.length)] // still scrambling
-        }).join('')
-      )
-      iteration++
-      if (iteration > totalFrames) {
-        setDisplay(text)
-        clearInterval(interval)
-      }
-    }, 22)
-    return () => clearInterval(interval)
-  }, [text, trigger])
-
-  return display
 }
 
 // ── Scroll reveal wrapper ──────────────────────────────────────
@@ -211,8 +179,8 @@ function ParticleCanvas() {
       reset() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.vx = (Math.random() - 0.5) * 0.4
-        this.vy = (Math.random() - 0.5) * 0.4
+        this.vx = (Math.random() - 0.5) * 0.24
+        this.vy = (Math.random() - 0.5) * 0.24
         this.radius = Math.random() * 1.7 + 0.7
         this.alpha = Math.random() * 0.5 + 0.18
       }
@@ -222,12 +190,12 @@ function ParticleCanvas() {
         const dy = mouse.current.y - this.y
         const dist = Math.sqrt(dx * dx + dy * dy)
         if (dist < 260) {
-          this.vx += dx * 0.00016
-          this.vy += dy * 0.00016
+          this.vx += dx * 0.00008
+          this.vy += dy * 0.00008
         }
         // Speed cap so particles don't fly off
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy)
-        if (speed > 1.15) { this.vx *= 1.15 / speed; this.vy *= 1.15 / speed }
+        if (speed > 0.65) { this.vx *= 0.65 / speed; this.vy *= 0.65 / speed }
 
         this.x += this.vx
         this.y += this.vy
@@ -369,15 +337,6 @@ function MockCard() {
 function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
   const scrollY = useMotionValue(0)
   const heroRef = useRef(null)
-  // Scramble triggers on mount
-  const [scrambleDone, setScrambleDone] = useState(false)
-  useEffect(() => {
-    const t = setTimeout(() => setScrambleDone(true), 200)
-    return () => clearTimeout(t)
-  }, [])
-
-  const line1 = useTextScramble('Study Smarter.', scrambleDone)
-  const line2 = useTextScramble('Not Harder.', scrambleDone)
 
   // Parallax: hero content moves up slower than scroll
   useEffect(() => {
@@ -549,7 +508,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             Built by students, for students
           </motion.p>
 
-          {/* Headline with scramble effect */}
+          {/* Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -563,7 +522,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               marginBottom: '8px',
               fontFamily: 'inherit',
             }}>
-            {line1}
+            Study Smarter.
           </motion.h1>
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
@@ -579,7 +538,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               WebkitTextFillColor: 'transparent',
               marginBottom: '28px',
             }}>
-            {line2}
+            Not Harder.
           </motion.h1>
 
           <motion.p
@@ -1231,7 +1190,7 @@ export default function App() {
   if (page === 'landing') return (
     <Landing
       onEnter={() => setPage('app')}
-      activeTab={tab}
+      activeTab={null}
       onSelectTab={(nextTab) => {
         if (nextTab === 'decks' && !user) {
           openAuth('signin')
