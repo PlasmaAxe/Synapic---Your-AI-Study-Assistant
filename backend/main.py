@@ -40,7 +40,7 @@ class FlashcardsResponse(BaseModel):
     flashcards: List[Flashcard]
 
 
-MAX_INPUT_CHARS = 12000  # ~3,000 tokens, leaves room for system prompt + response
+MAX_INPUT_CHARS = 24000  # ~3,000 tokens, leaves room for system prompt + response
 
 
 def check_text_length(text: str) -> dict | None:

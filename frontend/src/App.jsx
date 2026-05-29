@@ -50,7 +50,7 @@ const DARK_THEME = {
 
 let C = LIGHT_THEME
 
-const MAX_INPUT_CHARS = 12000
+const MAX_INPUT_CHARS = 24000
 const FREE_GENERATION_LIMIT = 5
 const APP_TABS = [
   { id: 'flashcards', label: 'Flashcards' },
@@ -161,7 +161,7 @@ function ScrollReveal({ children, delay = 0 }) {
 // Subtly reacts to mouse position - like a neural network / constellation
 function ParticleCanvas() {
   const canvasRef = useRef(null)
-  const mouse = useRef({ x: -1000, y: -1000 })
+  const mouse = useRef({ x: -1000, y: -1000, vx: 0, vy: 0, active: false })
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -179,23 +179,52 @@ function ParticleCanvas() {
       reset() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.vx = (Math.random() - 0.5) * 0.24
-        this.vy = (Math.random() - 0.5) * 0.24
+        this.vx = (Math.random() - 0.5) * 0.34
+        this.vy = (Math.random() - 0.5) * 0.34
         this.radius = Math.random() * 1.7 + 0.7
         this.alpha = Math.random() * 0.5 + 0.18
+        this.drift = Math.random() * Math.PI * 2
       }
       update() {
-        // Subtle mouse attraction - pulls particles gently toward cursor
+        // Cursor flow: particles follow movement without collapsing into a dense cluster.
         const dx = mouse.current.x - this.x
         const dy = mouse.current.y - this.y
         const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < 260) {
-          this.vx += dx * 0.00008
-          this.vy += dy * 0.00008
+        const influence = 390
+        const spacing = 150
+
+        if (mouse.current.active && dist < influence) {
+          const falloff = Math.pow(1 - dist / influence, 1.35)
+          const nx = dist > 0 ? dx / dist : 0
+          const ny = dist > 0 ? dy / dist : 0
+          const cursorSpeed = Math.min(Math.sqrt(mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy), 28)
+
+          this.vx += mouse.current.vx * 0.0048 * falloff
+          this.vy += mouse.current.vy * 0.0048 * falloff
+
+          if (dist > spacing) {
+            this.vx += nx * falloff * 0.0015
+            this.vy += ny * falloff * 0.0015
+          } else {
+            const repel = (1 - dist / spacing) * (0.055 + cursorSpeed * 0.0015)
+            this.vx -= nx * repel
+            this.vy -= ny * repel
+          }
+
+          const swirl = cursorSpeed * 0.00045 * falloff
+          this.vx += -ny * swirl
+          this.vy += nx * swirl
         }
+
+        this.drift += 0.006
+        this.vx += Math.cos(this.drift) * 0.0028
+        this.vy += Math.sin(this.drift * 0.85) * 0.0028
+        this.vx *= 0.984
+        this.vy *= 0.984
+
         // Speed cap so particles don't fly off
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy)
-        if (speed > 0.65) { this.vx *= 0.65 / speed; this.vy *= 0.65 / speed }
+        if (speed > 1.15) { this.vx *= 1.15 / speed; this.vy *= 1.15 / speed }
 
         this.x += this.vx
         this.y += this.vy
@@ -220,7 +249,15 @@ function ParticleCanvas() {
 
     const track = (e) => {
       const rect = canvas.getBoundingClientRect()
-      mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      mouse.current = {
+        x,
+        y,
+        vx: mouse.current.active ? x - mouse.current.x : 0,
+        vy: mouse.current.active ? y - mouse.current.y : 0,
+        active: true,
+      }
     }
     window.addEventListener('mousemove', track)
 
@@ -274,7 +311,7 @@ function ParticleCanvas() {
 function MockCard() {
   const [flipped, setFlipped] = useState(false)
   useEffect(() => {
-    const t = setInterval(() => setFlipped(f => !f), 3000)
+    const t = setInterval(() => setFlipped(f => !f), 2400)
     return () => clearInterval(t)
   }, [])
 
@@ -282,8 +319,8 @@ function MockCard() {
     <div style={{ perspective: '1000px' }} className="w-72 h-52 cursor-pointer"
       onClick={() => setFlipped(f => !f)}>
       <motion.div
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        animate={{ rotateY: flipped ? 180 : 0, y: flipped ? -3 : 0, scale: flipped ? 1.015 : 1 }}
+        transition={{ type: 'spring', stiffness: 190, damping: 21, mass: 0.7 }}
         style={{ transformStyle: 'preserve-3d', position: 'relative', width: '100%', height: '100%' }}
       >
         {/* Front */}
@@ -346,38 +383,134 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
   }, [])
 
   const heroY = useTransform(scrollY, [0, 600], [0, -120])
-  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
+  const heroOpacity = useTransform(scrollY, [0, 620, 1080], [1, 1, 0])
 
   const features = [
     {
       title: 'Flashcards',
       desc: 'AI generates a full deck from your notes. Study with our 3D flip cards or grid view.',
+      preview: 'flashcards',
     },
     {
       title: 'Quizzes',
       desc: 'Auto-scored multiple choice questions with explanations. Know exactly where you stand.',
+      preview: 'quiz',
     },
     {
       title: 'Summaries',
       desc: 'Dense lecture notes distilled into clean overviews, key points, and conclusions.',
+      preview: 'summary',
     },
   ]
 
+  const demoOutputs = [
+    { label: 'Flashcard', text: 'What process converts glucose into ATP?' },
+    { label: 'Quiz', text: 'Which stage produces the most ATP?' },
+    { label: 'Summary', text: 'Cellular respiration releases usable energy through glycolysis, the Krebs cycle, and oxidative phosphorylation.' },
+  ]
+
+  const faqs = [
+    {
+      q: 'Is Synapic free to start?',
+      a: 'Yes. You can paste notes and generate study material without needing a credit card.',
+    },
+    {
+      q: 'Can I save my flashcard decks?',
+      a: 'Yes. Create a free account to keep your decks and revisit them later.',
+    },
+    {
+      q: 'What notes work best?',
+      a: 'Lecture notes, textbook chapters, study guides, and pasted class material all work well.',
+    },
+  ]
+
+  const renderFeaturePreview = (type) => {
+    if (type === 'flashcards') {
+      return (
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {['Question', 'Answer'].map((label, idx) => (
+            <div key={label} style={{
+              padding: '12px',
+              borderRadius: '12px',
+              background: idx === 0 ? C.bg : C.accentLight,
+              border: `1px solid ${idx === 0 ? C.border : `${C.accent}30`}`,
+            }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, color: idx === 0 ? C.textLight : C.accent, textTransform: 'uppercase', marginBottom: '5px' }}>
+                {label}
+              </p>
+              <p style={{ fontSize: '12px', color: C.text, fontWeight: 700, lineHeight: 1.35 }}>
+                {idx === 0 ? 'What is active recall?' : 'Testing memory before rereading notes.'}
+              </p>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if (type === 'quiz') {
+      return (
+        <div style={{ display: 'grid', gap: '7px' }}>
+          <p style={{ fontSize: '12px', color: C.text, fontWeight: 800, lineHeight: 1.35 }}>
+            Which method improves long-term memory?
+          </p>
+          {['Rereading only', 'Active recall', 'Highlighting everything'].map((option, idx) => (
+            <div key={option} style={{
+              padding: '8px 10px',
+              borderRadius: '10px',
+              background: idx === 1 ? C.accentLight : C.bg,
+              border: `1px solid ${idx === 1 ? C.accent : C.border}`,
+              color: idx === 1 ? C.accentDark : C.textMuted,
+              fontSize: '11px',
+              fontWeight: 700,
+            }}>
+              {option}
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'grid', gap: '8px' }}>
+        {['Key idea', 'Definition', 'Conclusion'].map((label, idx) => (
+          <div key={label} style={{ display: 'flex', gap: '9px', alignItems: 'center' }}>
+            <span style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              background: idx === 0 ? C.accent : C.accentLight,
+              color: idx === 0 ? 'white' : C.accent,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: 900,
+              flex: '0 0 auto',
+            }}>
+              {idx + 1}
+            </span>
+            <span style={{ height: '8px', borderRadius: '20px', background: idx === 1 ? C.borderStrong : C.border, flex: 1 }} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const testimonials = [
     {
-      quote: "Don't fall behind, jump on the bandwagon now! This AI tool literally cut my study time in half before finals.",
+      quote: "I used Synapic for my first-year psychology lectures and turned messy notes into revision cards before the bus ride home.",
       name: 'James Smith',
-      role: 'PostGrad, UOA',
+      role: 'Psychology student, UOA',
       initials: 'JS',
     },
     {
-      quote: 'The summaries are scary accurate. I upload my 20-page biology readings and get the core concepts almost instantly!',
+      quote: 'The summaries helped me find the actual exam concepts in long biology readings without losing the details I needed.',
       name: 'Elena Lopez',
-      role: 'Pre-Med Student',
+      role: 'Pre-med student',
       initials: 'EL',
     },
     {
-      quote: 'Spaced repetition built-in is a game changer! I actually remember what I studied two weeks ago, which is a first..',
+      quote: 'I save decks by topic now, so finals revision feels organised instead of starting from scratch every week.',
       name: 'Ryan Chen',
       role: 'Final Year, AUT',
       initials: 'RC',
@@ -472,41 +605,23 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
         <motion.div style={{ y: heroY, opacity: heroOpacity, position: 'relative', zIndex: 3 }}
           className="flex flex-col items-center text-center">
 
-          {/* Badge */}
+          {/* Top claim */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '6px 16px', borderRadius: '100px', marginBottom: '36px',
-              border: `1px solid ${C.accent}40`,
-              background: C.accentLight,
-            }}>
-            <span style={{
-              width: '6px', height: '6px', borderRadius: '50%',
-              background: C.accent, display: 'block',
-              animation: 'pulse 2s ease-in-out infinite',
-            }} />
-            <span style={{ fontSize: '11px', fontWeight: 700, color: C.accent, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              AI-Powered Study Tools
-            </span>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.18 }}
-            style={{
-              fontSize: '12px',
+              marginBottom: '26px',
+              maxWidth: '760px',
+              fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
+              fontSize: 'clamp(22px, 3.4vw, 38px)',
               fontWeight: 800,
-              color: C.textMuted,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              marginBottom: '18px',
+              lineHeight: 1.16,
+              color: C.accentDark,
+              letterSpacing: 0,
             }}>
-            Built by students, for students
-          </motion.p>
+            #1 AI Study Tool for Students
+          </motion.div>
 
           {/* Headline */}
           <motion.h1
@@ -515,12 +630,12 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontSize: 'clamp(48px, 8vw, 88px)',
-              fontWeight: 900,
+              fontWeight: 850,
               lineHeight: 1.04,
-              letterSpacing: '-0.03em',
+              letterSpacing: 0,
               color: C.text,
               marginBottom: '8px',
-              fontFamily: 'inherit',
+              fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
             }}>
             Study Smarter.
           </motion.h1>
@@ -530,9 +645,10 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontSize: 'clamp(48px, 8vw, 88px)',
-              fontWeight: 900,
+              fontWeight: 850,
               lineHeight: 1.04,
-              letterSpacing: '-0.03em',
+              letterSpacing: 0,
+              fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
               background: C.accentGrad,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -546,12 +662,13 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.45 }}
             style={{
-              fontSize: '18px', color: C.textMuted,
+              fontSize: '18px', color: C.text,
               maxWidth: '480px', lineHeight: 1.65,
               marginBottom: '48px', letterSpacing: '0.01em',
+              fontWeight: 600,
             }}>
             Paste your lecture notes and instantly get flashcards, quizzes,
-            and summaries - all powered by AI.
+            and summaries, powered by AI.
           </motion.p>
 
           {/* CTA buttons */}
@@ -559,7 +676,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.55 }}
-            style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '72px' }}>
+            style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <motion.button onClick={onEnter}
               whileHover={{ scale: 1.04, boxShadow: `0 12px 40px ${C.accent}50` }}
               whileTap={{ scale: 0.97 }}
@@ -584,6 +701,14 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               See how it works
             </button>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.62 }}
+            style={{ fontSize: '13px', color: C.textMuted, fontWeight: 700, marginBottom: '56px' }}>
+            Free to start. No credit card required.
+          </motion.p>
 
           {/* Live flashcard preview */}
           <motion.div
@@ -613,7 +738,52 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
       </div>
 
       {/* ── Features section ──────────────────────────── */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '120px 40px' }}>
+      {/* Product demo section */}
+      <ScrollReveal>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 40px 48px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px', alignItems: 'stretch' }}>
+            <div style={{
+              background: C.bgCard,
+              border: `1px solid ${C.border}`,
+              borderRadius: '18px',
+              padding: '28px',
+              boxShadow: '0 18px 55px rgba(26,26,24,0.05)',
+            }}>
+              <p style={{ fontSize: '11px', fontWeight: 850, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.textLight, marginBottom: '18px' }}>
+                Your notes
+              </p>
+              <p style={{ fontSize: '15px', color: C.text, lineHeight: 1.8, fontWeight: 600 }}>
+                Cellular respiration turns glucose into ATP. It starts with glycolysis, continues through the Krebs cycle, and produces most ATP during oxidative phosphorylation.
+              </p>
+            </div>
+            <div style={{
+              background: C.bgCard,
+              border: `1px solid ${C.border}`,
+              borderRadius: '18px',
+              padding: '28px',
+              boxShadow: '0 18px 55px rgba(26,26,24,0.05)',
+            }}>
+              <p style={{ fontSize: '11px', fontWeight: 850, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.accent, marginBottom: '18px' }}>
+                Synapic output
+              </p>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {demoOutputs.map(item => (
+                  <div key={item.label} style={{ padding: '14px', borderRadius: '14px', background: item.label === 'Flashcard' ? C.accentLight : C.bg, border: `1px solid ${item.label === 'Flashcard' ? `${C.accent}35` : C.border}` }}>
+                    <p style={{ fontSize: '10px', fontWeight: 900, color: item.label === 'Flashcard' ? C.accent : C.textLight, textTransform: 'uppercase', marginBottom: '6px' }}>
+                      {item.label}
+                    </p>
+                    <p style={{ fontSize: '13px', color: C.text, lineHeight: 1.45, fontWeight: 700 }}>
+                      {item.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ScrollReveal>
+
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '72px 40px 120px' }}>
 
         <ScrollReveal>
           <div style={{ marginBottom: '72px', maxWidth: '600px' }}>
@@ -654,6 +824,9 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
                 <p style={{ fontSize: '14px', color: C.textMuted, lineHeight: 1.7 }}>
                   {f.desc}
                 </p>
+                <div style={{ marginTop: '28px', padding: '16px', borderRadius: '16px', background: C.bg, border: `1px solid ${C.border}` }}>
+                  {renderFeaturePreview(f.preview)}
+                </div>
               </motion.div>
             </ScrollReveal>
           ))}
@@ -688,16 +861,25 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
       {/* Mission section */}
       <ScrollReveal>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 40px 72px' }}>
+          <p style={{
+            fontSize: '12px',
+            fontWeight: 900,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            color: C.accent,
+            textAlign: 'center',
+            marginBottom: '24px',
+          }}>
+            Built by students, for students
+          </p>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '48px',
             alignItems: 'center',
-            background: `linear-gradient(135deg, ${C.bgCard}, ${C.accentLight})`,
-            border: `1px solid ${C.border}`,
-            borderRadius: '24px',
-            padding: '48px',
-            boxShadow: '0 24px 70px rgba(26,26,24,0.06)',
+            borderTop: `1px solid ${C.border}`,
+            borderBottom: `1px solid ${C.border}`,
+            padding: '56px 0',
           }}>
             <div>
               <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.accent, marginBottom: '14px' }}>
@@ -708,7 +890,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               </h2>
             </div>
             <p style={{ fontSize: 'clamp(18px, 2.2vw, 24px)', color: C.text, lineHeight: 1.55, fontWeight: 650, letterSpacing: '-0.01em' }}>
-              At Synapic, we want you to have the best studying experience possible. The future is here, with AI, becoming a straight-A student has never been easier.
+              Synapic is built to turn the notes students already have into material they can actually revise from: clear cards, quick quizzes, and summaries without the busywork.
             </p>
           </div>
         </div>
@@ -787,6 +969,36 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
           ))}
         </div>
       </div>
+
+      <ScrollReveal>
+        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '8px 40px 80px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.accent, marginBottom: '12px' }}>
+              FAQ
+            </p>
+            <h2 style={{ fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 900, color: C.text, lineHeight: 1.12 }}>
+              Quick answers
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {faqs.map(item => (
+              <div key={item.q} style={{
+                background: C.bgCard,
+                border: `1px solid ${C.border}`,
+                borderRadius: '16px',
+                padding: '22px 24px',
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 850, color: C.text, marginBottom: '8px' }}>
+                  {item.q}
+                </h3>
+                <p style={{ fontSize: '14px', color: C.textMuted, lineHeight: 1.65, fontWeight: 600 }}>
+                  {item.a}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </ScrollReveal>
 
       <ScrollReveal>
         <div style={{ padding: '140px 40px', textAlign: 'center' }}>
