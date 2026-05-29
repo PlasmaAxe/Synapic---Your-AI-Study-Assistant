@@ -50,7 +50,7 @@ const DARK_THEME = {
 
 let C = LIGHT_THEME
 
-const MAX_INPUT_CHARS = 24000
+const MAX_INPUT_CHARS = 100_000
 const FREE_GENERATION_LIMIT = 5
 const APP_TABS = [
   { id: 'flashcards', label: 'Flashcards' },
@@ -1432,7 +1432,7 @@ export default function App() {
   }
 
   const subheadings = {
-    flashcards: 'Transform your dense lecture notes into interactive flashcards in seconds using our scholarly AI engine.',
+    flashcards: 'Transform your dense lecture notes into interactive flashcards in seconds using our scholarly AI engine. Please note, more notes = more flashcards and longer generation time.',
     quizzes: 'Transform your dense lecture notes into a multiple-choice quiz to test your knowledge.',
     summary: 'Transform your dense lecture notes into a clean, structured summary in seconds.',
   }
