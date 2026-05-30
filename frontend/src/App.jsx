@@ -153,6 +153,36 @@ function CursorGlow() {
 
 // ── Scroll reveal wrapper ──────────────────────────────────────
 // Wrap any section in this and it fades+slides up when it enters viewport
+function DecorativeGlowLayer({ variant = 'study' }) {
+  const glows = variant === 'landing'
+    ? [
+      { top: '1400px', right: '-210px', width: '420px', height: '420px', opacity: 0.16 },
+      { top: '2900px', left: '-190px', width: '360px', height: '360px', opacity: 0.11 },
+      { bottom: '-120px', right: '-90px', width: '320px', height: '320px', opacity: 0.09 },
+    ]
+    : [
+      { top: '115px', right: '-220px', width: '420px', height: '420px', opacity: 0.14 },
+      { top: '560px', left: '-210px', width: '360px', height: '360px', opacity: 0.1 },
+      { bottom: '-130px', right: '-120px', width: '330px', height: '330px', opacity: 0.08 },
+    ]
+
+  return (
+    <div aria-hidden="true" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+      {glows.map((glow, idx) => (
+        <div
+          key={idx}
+          style={{
+            position: 'absolute',
+            ...glow,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${C.accent}, transparent)`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function ScrollReveal({ children, delay = 0 }) {
   const ref = useRef(null)
   // useInView from framer-motion fires once when element enters viewport
@@ -540,8 +570,9 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
   ]
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ background: C.bg, minHeight: '100vh', overflowX: 'hidden', position: 'relative', isolation: 'isolate' }}>
       <CursorGlow />
+      <DecorativeGlowLayer variant="landing" />
 
       {/* ── Nav ───────────────────────────────────────── */}
       <nav className="flex items-center justify-between px-8 py-3 sticky top-0 z-40"
@@ -788,6 +819,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
 
       {/* ── Features section ──────────────────────────── */}
       {/* Product demo section */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <ScrollReveal>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 40px 48px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px', alignItems: 'stretch' }}>
@@ -1104,6 +1136,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
           50% { opacity: 0.5; transform: scale(0.85); }
         }
       `}</style>
+      </div>
     </div>
   )
 }
@@ -1528,7 +1561,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: C.bg }}>
+    <div className="min-h-screen" style={{ background: C.bg, position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
+      <DecorativeGlowLayer variant="study" />
 
       {/* Toast */}
       <AnimatePresence>
@@ -1611,7 +1645,7 @@ export default function App() {
       </nav>
 
       {/* ── Main content ─────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      <div className="max-w-4xl mx-auto px-6 py-10 relative z-10">
 
         {/* Input section - only show on non-decks tabs */}
         <AnimatePresence mode="wait">
