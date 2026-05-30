@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
-import { motion, AnimatePresence, useMotionValue, useSpring, useInView, useTransform } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useSpring, useInView, useTransform, useReducedMotion } from 'framer-motion'
 import synapicLogo from './assets/synapicLogo1.png'
 import { supabase } from './supabase'
 import Authentication from './Authentication'
@@ -97,6 +97,20 @@ const cardVariant = {
   initial: { opacity: 0, y: 16, scale: 0.97 },
   animate: { opacity: 1, y: 0, scale: 1 },
   transition: { duration: 0.3, ease: 'easeOut' }
+}
+
+const studyFlipTransition = {
+  type: 'spring',
+  stiffness: 150,
+  damping: 24,
+  mass: 0.75,
+}
+
+const cardSwapTransition = {
+  opacity: { duration: 0.16, ease: 'easeOut' },
+  y: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+  scale: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+  rotateY: studyFlipTransition,
 }
 
 // ── Cursor glow ───────────────────────────────────────────────
@@ -374,6 +388,7 @@ function MockCard() {
 function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
   const scrollY = useMotionValue(0)
   const heroRef = useRef(null)
+  const whatSynapicDoesRef = useRef(null)
 
   // Parallax: hero content moves up slower than scroll
   useEffect(() => {
@@ -384,6 +399,13 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
 
   const heroY = useTransform(scrollY, [0, 600], [0, -120])
   const heroOpacity = useTransform(scrollY, [0, 620, 1080], [1, 1, 0])
+
+  const scrollToWhatSynapicDoes = () => {
+    whatSynapicDoesRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
 
   const features = [
     {
@@ -611,16 +633,19 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             style={{
-              marginBottom: '26px',
-              maxWidth: '760px',
+              marginBottom: '18px',
+              padding: '9px 16px',
+              borderRadius: '999px',
+              background: C.accentLight,
+              border: `1px solid ${C.accent}30`,
               fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
-              fontSize: 'clamp(22px, 3.4vw, 38px)',
+              fontSize: '13px',
               fontWeight: 800,
-              lineHeight: 1.16,
-              color: C.accentDark,
+              lineHeight: 1,
+              color: C.accent,
               letterSpacing: 0,
             }}>
-            #1 AI Study Tool for Students
+            AI-Powered Learning Platform
           </motion.div>
 
           {/* Headline */}
@@ -629,47 +654,71 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              fontSize: 'clamp(48px, 8vw, 88px)',
+              fontSize: 'clamp(46px, 7.8vw, 92px)',
               fontWeight: 850,
-              lineHeight: 1.04,
+              lineHeight: 1.02,
               letterSpacing: 0,
               color: C.text,
-              marginBottom: '8px',
+              maxWidth: '860px',
+              marginBottom: '20px',
               fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
             }}>
-            Study Smarter.
-          </motion.h1>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              fontSize: 'clamp(48px, 8vw, 88px)',
-              fontWeight: 850,
-              lineHeight: 1.04,
-              letterSpacing: 0,
-              fontFamily: '"Segoe UI", Arial, Helvetica, sans-serif',
-              background: C.accentGrad,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginBottom: '28px',
-            }}>
-            Not Harder.
+            #1 AI study tool for students
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.45 }}
+            transition={{ duration: 0.7, delay: 0.35 }}
             style={{
-              fontSize: '18px', color: C.text,
-              maxWidth: '480px', lineHeight: 1.65,
-              marginBottom: '48px', letterSpacing: '0.01em',
+              fontSize: '18px', color: C.textMuted,
+              maxWidth: '620px', lineHeight: 1.65,
+              marginBottom: '22px', letterSpacing: '0.01em',
               fontWeight: 600,
             }}>
-            Paste your lecture notes and instantly get flashcards, quizzes,
-            and summaries, powered by AI.
+            Paste your notes and instantly generate flashcards, quizzes, and summaries powered by AI.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.45 }}
+            style={{
+              display: 'flex',
+              gap: '10px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              marginBottom: '42px',
+            }}>
+            {['Paste notes', 'Generate study tools', 'Review faster'].map((step, idx) => (
+              <div key={step} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                borderRadius: '999px',
+                background: C.bgCard,
+                border: `1px solid ${C.border}`,
+                boxShadow: `0 10px 30px ${C.text}0D`,
+              }}>
+                <span style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: idx === 0 ? C.accentGrad : C.accentLight,
+                  color: idx === 0 ? 'white' : C.accent,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 900,
+                }}>
+                  {idx + 1}
+                </span>
+                <span style={{ color: C.text, fontSize: '13px', fontWeight: 800 }}>{step}</span>
+              </div>
+            ))}
+          </motion.div>
 
           {/* CTA buttons */}
           <motion.div
@@ -690,7 +739,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               }}>
               Start Studying Free
             </motion.button>
-            <button onClick={onEnter} style={{
+            <button onClick={scrollToWhatSynapicDoes} style={{
               padding: '16px 28px', borderRadius: '100px',
               background: 'transparent', border: `1.5px solid ${C.borderStrong}`,
               fontSize: '15px', fontWeight: 600, color: C.textMuted, cursor: 'pointer',
@@ -786,7 +835,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '72px 40px 120px' }}>
 
         <ScrollReveal>
-          <div style={{ marginBottom: '72px', maxWidth: '600px' }}>
+          <div ref={whatSynapicDoesRef} style={{ marginBottom: '72px', maxWidth: '600px', scrollMarginTop: '96px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.accent, marginBottom: '16px' }}>
               What Synapic does
             </p>
@@ -1072,9 +1121,28 @@ function Toast({ message, onClose }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       className="fixed bottom-6 right-6 px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium z-50 flex items-center gap-3"
-      style={{ background: C.text, color: 'white', maxWidth: '320px' }}>
+      style={{
+        background: C.bgCard,
+        color: C.text,
+        border: `1px solid ${C.borderStrong}`,
+        boxShadow: `0 18px 50px rgba(0,0,0,0.22), 0 0 0 1px ${C.accent}12`,
+        maxWidth: '320px',
+      }}>
+      <span style={{
+        width: '9px',
+        height: '9px',
+        borderRadius: '50%',
+        background: C.accent,
+        boxShadow: `0 0 0 4px ${C.accent}20`,
+        flex: '0 0 auto',
+      }} />
       <span className="flex-1">{message}</span>
-        <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg leading-none">x</button>
+      <button
+        onClick={onClose}
+        className="opacity-60 hover:opacity-100 text-lg leading-none"
+        style={{ color: C.textMuted }}>
+        x
+      </button>
     </motion.div>
   )
 }
@@ -1156,6 +1224,7 @@ function UpgradePrompt({ onSignUp, onClose }) {
 
 // ── Main App ─────────────────────────────────────────────────
 export default function App() {
+  const shouldReduceMotion = useReducedMotion()
   const [page, setPage] = useState('landing')
   const [authMode, setAuthMode] = useState('signin')
   const [user, setUser] = useState(null)
@@ -1183,6 +1252,15 @@ export default function App() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
 
   C = darkMode ? DARK_THEME : LIGHT_THEME
+
+  const goToStudyCard = useCallback((nextCard) => {
+    if (nextCard === currentCard) return
+    setFlipped(prev => ({
+      ...prev,
+      [nextCard]: false,
+    }))
+    setCurrentCard(nextCard)
+  }, [currentCard])
 
   const [guestGenerations, setGuestGenerations] = useState(() => {
     const saved = localStorage.getItem('synapic_guest_generations')
@@ -1217,8 +1295,8 @@ export default function App() {
   useEffect(() => {
     const handler = e => {
       if (flashcards.length === 0 || studyMode !== 'study') return
-      if (e.key === 'ArrowRight') setCurrentCard(i => Math.min(i + 1, flashcards.length - 1))
-      if (e.key === 'ArrowLeft') setCurrentCard(i => Math.max(i - 1, 0))
+      if (e.key === 'ArrowRight') goToStudyCard(Math.min(currentCard + 1, flashcards.length - 1))
+      if (e.key === 'ArrowLeft') goToStudyCard(Math.max(currentCard - 1, 0))
       if (e.key === ' ') {
         e.preventDefault()
         setFlipped(prev => ({ ...prev, [currentCard]: !prev[currentCard] }))
@@ -1226,7 +1304,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [flashcards, studyMode, currentCard])
+  }, [flashcards, studyMode, currentCard, goToStudyCard])
 
   // ── Guest generation helpers ──────────────────────────────
   const incrementGuestGenerations = () => {
@@ -1432,9 +1510,15 @@ export default function App() {
   }
 
   const subheadings = {
-    flashcards: 'Transform your dense lecture notes into interactive flashcards in seconds using our scholarly AI engine. Please note, more notes = more flashcards and longer generation time.',
+    flashcards: 'Transform your dense lecture notes into interactive flashcards in seconds using our scholarly AI engine.',
     quizzes: 'Transform your dense lecture notes into a multiple-choice quiz to test your knowledge.',
     summary: 'Transform your dense lecture notes into a clean, structured summary in seconds.',
+  }
+
+  const inputNotes = {
+    flashcards: 'More notes create more flashcards, so larger inputs take longer to generate.',
+    quizzes: 'More notes create more quiz questions, so larger inputs take longer to generate.',
+    summary: 'More notes create a longer summary, so larger inputs take longer to generate.',
   }
 
   const btnLabels = {
@@ -1543,6 +1627,19 @@ export default function App() {
               <p className="text-sm mb-5 leading-relaxed" style={{ color: C.textMuted }}>
                 {subheadings[tab]}
               </p>
+
+              {inputNotes[tab] && (
+                <div
+                  className="mb-5 rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                  style={{
+                    background: darkMode ? 'rgba(251,191,36,0.12)' : '#FFF8E8',
+                    border: `1px solid ${C.warning}45`,
+                    color: darkMode ? '#FDE68A' : '#8A5A00',
+                  }}>
+                  <span className="font-bold">Generation note: </span>
+                  {inputNotes[tab]}
+                </div>
+              )}
 
               {/* Guest usage banner - matches Image 2 pill badge */}
               {!user && (
@@ -1738,16 +1835,17 @@ export default function App() {
                       {flashcards.map((card, i) => (
                         <motion.div key={i} variants={cardVariant}
                           onClick={() => setFlipped(p => ({ ...p, [i]: !p[i] }))}
-                          whileHover={{ scale: 1.03, boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}
-                          style={{ perspective: '600px' }}>
+                          whileHover={shouldReduceMotion ? {} : { y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
+                          style={{ perspective: '900px' }}>
                           <motion.div
                             animate={{ rotateY: flipped[i] ? 180 : 0 }}
-                            transition={{ duration: 0.5, ease: 'easeInOut' }}
+                            transition={shouldReduceMotion ? { duration: 0 } : studyFlipTransition}
                             style={{
                               transformStyle: 'preserve-3d',
                               position: 'relative',
                               minHeight: '144px',
                               cursor: 'pointer',
+                              willChange: 'transform',
                             }}>
                             {/* Front */}
                             <div style={{
@@ -1757,6 +1855,7 @@ export default function App() {
                               background: C.bgCard,
                               border: `1px solid ${C.border}`,
                               borderRadius: '16px',
+                              boxShadow: '0 2px 10px rgba(0,0,0,0.035)',
                               padding: '24px',
                               display: 'flex',
                               flexDirection: 'column',
@@ -1774,7 +1873,8 @@ export default function App() {
                               WebkitBackfaceVisibility: 'hidden',
                               transform: 'rotateY(180deg)',
                               position: 'absolute', inset: 0,
-                              background: C.accentGrad,
+                              background: C.accentLight,
+                              border: `1px solid ${C.accent}45`,
                               borderRadius: '16px',
                               padding: '24px',
                               display: 'flex',
@@ -1782,9 +1882,9 @@ export default function App() {
                               justifyContent: 'space-between',
                             }}>
                               <p className="text-xs uppercase tracking-widest font-semibold"
-                                style={{ color: 'rgba(255,255,255,0.6)' }}>Answer</p>
-                              <p className="text-sm font-medium leading-relaxed text-white">{card.answer}</p>
-                              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Click to flip back</p>
+                                style={{ color: C.accent }}>Answer</p>
+                              <p className="text-sm font-medium leading-relaxed" style={{ color: C.text }}>{card.answer}</p>
+                              <p className="text-xs" style={{ color: C.textLight }}>Click to flip back</p>
                             </div>
                           </motion.div>
                         </motion.div>
@@ -1815,60 +1915,86 @@ export default function App() {
 
                       {/* Big card with 3D flip */}
                       <div style={{ perspective: '1200px' }} className="w-full max-w-2xl mb-6">
-                        <motion.div
-                          animate={{ rotateY: flipped[currentCard] ? 180 : 0 }}
-                          transition={{ duration: 0.55, ease: 'easeInOut' }}
-                          style={{ transformStyle: 'preserve-3d', position: 'relative', minHeight: '280px' }}>
-                          {/* Front */}
-                          <div
-                            onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={currentCard}
+                            initial={shouldReduceMotion ? false : { opacity: 0, y: 8, scale: 0.995 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.995 }}
+                            transition={shouldReduceMotion ? { duration: 0 } : {
+                              opacity: cardSwapTransition.opacity,
+                              y: cardSwapTransition.y,
+                              scale: cardSwapTransition.scale,
+                            }}
                             style={{
-                              backfaceVisibility: 'hidden',
-                              WebkitBackfaceVisibility: 'hidden',
-                              position: 'absolute', inset: 0,
-                              background: C.bgCard,
-                              border: `1px solid ${C.border}`,
-                              borderRadius: '24px',
-                              boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '48px',
-                              textAlign: 'center',
+                              position: 'relative',
+                              minHeight: '280px',
+                              willChange: 'transform',
                             }}>
-                            <p className="text-xl font-bold leading-relaxed mb-6"
-                              style={{ color: C.text }}>
-                              {flashcards[currentCard].question}
-                            </p>
-                          </div>
-                          {/* Back */}
-                          <div
-                            onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
-                            style={{
-                              backfaceVisibility: 'hidden',
-                              WebkitBackfaceVisibility: 'hidden',
-                              transform: 'rotateY(180deg)',
-                              position: 'absolute', inset: 0,
-                              background: C.accentGrad,
-                              borderRadius: '24px',
-                              boxShadow: `0 20px 60px ${C.accent}30`,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '48px',
-                              textAlign: 'center',
-                            }}>
-                            <p className="text-xs uppercase tracking-widest mb-4 font-semibold"
-                              style={{ color: 'rgba(255,255,255,0.6)' }}>Answer</p>
-                            <p className="text-xl font-bold text-white leading-relaxed">
-                              {flashcards[currentCard].answer}
-                            </p>
-                          </div>
-                        </motion.div>
+                            <motion.div
+                              animate={{ rotateY: flipped[currentCard] ? 180 : 0 }}
+                              transition={shouldReduceMotion ? { duration: 0 } : studyFlipTransition}
+                              style={{
+                                transformStyle: 'preserve-3d',
+                                position: 'absolute',
+                                inset: 0,
+                                willChange: 'transform',
+                              }}>
+                              {/* Front */}
+                              <div
+                                onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
+                                style={{
+                                  backfaceVisibility: 'hidden',
+                                  WebkitBackfaceVisibility: 'hidden',
+                                  position: 'absolute', inset: 0,
+                                  background: C.bgCard,
+                                  border: `1px solid ${C.border}`,
+                                  borderRadius: '24px',
+                                  boxShadow: '0 8px 28px rgba(0,0,0,0.055)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '48px',
+                                  textAlign: 'center',
+                                }}>
+                                <p className="text-xs uppercase tracking-widest mb-5 font-semibold"
+                                  style={{ color: C.textLight }}>Question</p>
+                                <p className="text-xl font-bold leading-relaxed"
+                                  style={{ color: C.text }}>
+                                  {flashcards[currentCard].question}
+                                </p>
+                              </div>
+                              {/* Back */}
+                              <div
+                                onClick={() => setFlipped(p => ({ ...p, [currentCard]: !p[currentCard] }))}
+                                style={{
+                                  backfaceVisibility: 'hidden',
+                                  WebkitBackfaceVisibility: 'hidden',
+                                  transform: 'rotateY(180deg)',
+                                  position: 'absolute', inset: 0,
+                                  background: C.accentLight,
+                                  border: `1px solid ${C.accent}55`,
+                                  borderRadius: '24px',
+                                  boxShadow: '0 8px 28px rgba(0,0,0,0.055)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '48px',
+                                  textAlign: 'center',
+                                }}>
+                                <p className="text-xs uppercase tracking-widest mb-5 font-semibold"
+                                  style={{ color: C.accent }}>Answer</p>
+                                <p className="text-xl font-bold leading-relaxed" style={{ color: C.text }}>
+                                  {flashcards[currentCard].answer}
+                                </p>
+                              </div>
+                            </motion.div>
+                          </motion.div>
+                        </AnimatePresence>
                       </div>
 
                       {/* Previous / Next - matches Image 3 */}
@@ -1882,15 +2008,15 @@ export default function App() {
                       </div>
 
                       <div className="flex gap-3">
-                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                          onClick={() => { setFlipped({}); setCurrentCard(i => Math.max(i - 1, 0)) }}
+                        <motion.button whileHover={shouldReduceMotion ? {} : { y: -1 }} whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+                          onClick={() => goToStudyCard(Math.max(currentCard - 1, 0))}
                           disabled={currentCard === 0}
                           className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-30"
                           style={{ background: C.bgCard, color: C.text, border: `1px solid ${C.border}` }}>
                           Previous
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                          onClick={() => { setFlipped({}); setCurrentCard(i => Math.min(i + 1, flashcards.length - 1)) }}
+                        <motion.button whileHover={shouldReduceMotion ? {} : { y: -1 }} whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+                          onClick={() => goToStudyCard(Math.min(currentCard + 1, flashcards.length - 1))}
                           disabled={currentCard === flashcards.length - 1}
                           className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-white transition-all disabled:opacity-30"
                           style={{ background: C.accentGrad }}>
