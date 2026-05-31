@@ -474,6 +474,14 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
       q: 'What notes work best?',
       a: 'Lecture notes, textbook chapters, study guides, and pasted class material all work well.',
     },
+    { q: 'How does the AI know what to generate?',
+      a: 'Our models have been fine-tuned on thousands of study materials to understand how to create effective flashcards, quizzes, and summaries from your notes.',
+
+    },
+    { q: 'What are new Features coming out soon?',
+      a: 'Expect chat with notes, where you can ask the AI further questions, and studying based on your weaknessees and strengths, through our spaced repetition model!',
+
+    },
   ]
 
   const renderFeaturePreview = (type) => {
@@ -971,7 +979,7 @@ function Landing({ onEnter, onSelectTab, activeTab, onAuth, user, onSignOut }) {
               </h2>
             </div>
             <p style={{ fontSize: 'clamp(18px, 2.2vw, 24px)', color: C.text, lineHeight: 1.55, fontWeight: 650, letterSpacing: '-0.01em' }}>
-              Synapic is built to turn the notes students already have into material they can actually revise from: clear cards, quick quizzes, and summaries without the busywork.
+              At Synapic, we want you to have the best studying experience possible. The future is here, with AI, becoming a straight-A student has never been easier.
             </p>
           </div>
         </div>
