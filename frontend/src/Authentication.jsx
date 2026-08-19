@@ -27,7 +27,7 @@ export default function Authentication({ onLogin, onBack, initialMode = 'signin'
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
 
-  const handleAuth = async () => {
+  const handleAuth = async () => { // Handles both sign in and sign up, makes sure fields are filled.
     if (!email || !password) {
       setMessage({ text: 'Please fill in all fields.', type: 'error' })
       return
