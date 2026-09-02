@@ -113,7 +113,7 @@ Computer Science student at the University of Auckland.
 
 Interested in **Software Engineering, AI/ML, Cybersecurity and Full-Stack Development.**
 
-[LinkedIn](https://linkedin.com/in/shyamzere) · [GitHub](https://github.com/PlasmaAxe)
+[LinkedIn](https://linkedin.com/in/shyamzere) · [GitHub](https://github.com/shyamzere)
 
 ---
 
